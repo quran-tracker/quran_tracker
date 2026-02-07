@@ -1270,6 +1270,8 @@ let pendingGroupsLoad = false; // if user clicks Groups before auth is ready
 
 let currentUserEmail = null;
 let createdGroupId = null;
+const normEmail = (e)=> (e||"").trim().toLowerCase();
+const inviteDocId = (groupId, emailLower)=> `${groupId}__${encodeURIComponent(emailLower)}`;
 
 const fmtTime = (ts)=>{
   try{
@@ -1471,19 +1473,35 @@ async function loadGroupInvites(){
 }
 
 async function sendGroupInvite(){
-  const email = (groupInviteEmailEl.value || "").trim();
-  if(!email || !email.includes("@")){ toast("تنبيه","اكتبي إيميل صحيح."); return; }
+  const emailRaw = (groupInviteEmailEl.value || "").trim();
+  const emailLower = normEmail(emailRaw);
+  if(!emailLower || !emailLower.includes("@")){ toast("تنبيه","اكتبي إيميل صحيح."); return; }
+  if(!activeGroupId){ toast("تنبيه","لا يوجد GroupId."); return; }
+
   groupSendInviteBtn.disabled = true;
   try{
-    await addDoc(collection(db, "groupInvites"), {
+    const invId = inviteDocId(activeGroupId, emailLower);
+    const invRef = doc(db, "groupInvites", invId);
+    const invSnap = await getDoc(invRef);
+
+    if(invSnap.exists()){
+      const prev = invSnap.data() || {};
+      if(prev.status === "pending"){ toast("تنبيه","هذه الدعوة موجودة بالفعل (بانتظار القبول)."); return; }
+      if(prev.status === "accepted"){ toast("تنبيه","تم قبول الدعوة سابقًا."); return; }
+    }
+
+    await setDoc(invRef, {
       groupId: activeGroupId,
       groupName: activeGroupName || "مجموعة",
-      invitedEmail: email,
+      invitedEmail: emailLower,
+      invitedEmailLower: emailLower,
       invitedByUid: currentUser.uid,
       invitedByEmail: currentUserEmail,
       status: "pending",
-      createdAt: serverTimestamp()
-    });
+      createdAt: serverTimestamp(),
+      resentAt: invSnap.exists() ? serverTimestamp() : null
+    }, { merge:true });
+
     groupInviteEmailEl.value = "";
     toast("تم","تم إرسال الدعوة ✅");
     await loadGroupInvites();
@@ -1844,12 +1862,25 @@ async function loadMyInvites(){
   invitesListEl.innerHTML = "";
   invitesEmptyEl.style.display = "none";
 
-  const q = query(
+  const emailLower = normEmail(currentUserEmail);
+
+  // Backward-compat: old invites might not have invitedEmailLower
+  const q1 = query(
+    collection(db, "groupInvites"),
+    where("invitedEmailLower", "==", emailLower),
+    where("status", "==", "pending")
+  );
+  const q2 = query(
     collection(db, "groupInvites"),
     where("invitedEmail", "==", currentUserEmail),
     where("status", "==", "pending")
   );
-  const snap = await getDocs(q);
+
+  const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+  const docsMap = new Map();
+  snap1.forEach(d=>docsMap.set(d.id, d));
+  snap2.forEach(d=>docsMap.set(d.id, d));
+  const snap = { empty: docsMap.size===0, forEach: (fn)=>{ for(const d of docsMap.values()) fn(d); } };
 
   if(snap.empty){
     invitesEmptyEl.style.display = "block";
@@ -2063,25 +2094,37 @@ async function loadSentInvites(){
 
 async function sendInvite(){
   if(!createdGroupId){ toast("تنبيه", "أنشئي مجموعة أولاً."); return; }
-  const email = (inviteEmailEl.value || "").trim();
-  if(!email || !email.includes("@")){ toast("تنبيه", "اكتبي إيميل صحيح."); return; }
+  const emailRaw = (inviteEmailEl.value || "").trim();
+  const emailLower = normEmail(emailRaw);
+  if(!emailLower || !emailLower.includes("@")){ toast("تنبيه", "اكتبي إيميل صحيح."); return; }
   if(!currentUser){ toast("تنبيه", "سجّلي دخول أولاً."); return; }
 
   sendInviteBtn.disabled = true;
   try{
-    // Read group name for nicer invite
     const gSnap = await getDoc(doc(db, "groups", createdGroupId));
     const g = gSnap.exists() ? gSnap.data() : { name: "مجموعة" };
 
-    await addDoc(collection(db, "groupInvites"), {
+    const invId = inviteDocId(createdGroupId, emailLower);
+    const invRef = doc(db, "groupInvites", invId);
+    const invSnap = await getDoc(invRef);
+
+    if(invSnap.exists()){
+      const prev = invSnap.data() || {};
+      if(prev.status === "pending"){ toast("تنبيه","هذه الدعوة موجودة بالفعل (بانتظار القبول)."); return; }
+      if(prev.status === "accepted"){ toast("تنبيه","تم قبول الدعوة سابقًا."); return; }
+    }
+
+    await setDoc(invRef, {
       groupId: createdGroupId,
       groupName: g.name || "مجموعة",
-      invitedEmail: email,
+      invitedEmail: emailLower,
+      invitedEmailLower: emailLower,
       invitedByUid: currentUser.uid,
       invitedByEmail: currentUserEmail,
       status: "pending",
-      createdAt: serverTimestamp()
-    });
+      createdAt: serverTimestamp(),
+      resentAt: invSnap.exists() ? serverTimestamp() : null
+    }, { merge:true });
 
     inviteEmailEl.value = "";
     toast("تم", "تم إرسال الدعوة ✅");
@@ -2093,6 +2136,7 @@ async function sendInvite(){
     sendInviteBtn.disabled = false;
   }
 }
+
 
   let uid = null;
   let currentPart = null;
@@ -2354,7 +2398,7 @@ async function openDash(){
     if(user){
       currentUser = user;
       window.currentUser = user;
-      currentUserEmail = (user.email || "").trim();
+      currentUserEmail = normEmail(user.email);
       uid = user.uid;
       await openDash();
     }else{
