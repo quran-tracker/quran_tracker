@@ -1,0 +1,2541 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>متابعة حفظ القرآن</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg1:#fff7fb; --bg2:#ffffff; --card:#ffffff; --ink:#2d1f23; --muted:#7a6a6f;
+      --line:#f1d8e3; --accent:#d96aa5; --accent2:#f6a6c8; --ok:#065f46;
+      --shadow:0 14px 40px rgba(0,0,0,.07); --r:22px;
+      --sans:"Tajawal",system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic","Noto Naskh Arabic",Arial,sans-serif;
+    ;--navBlue:#4b83ff}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:var(--sans);color:var(--ink);min-height:100vh;background:
+      radial-gradient(1200px 600px at 10% 0%, rgba(217,106,165,.18), transparent 60%),
+      radial-gradient(900px 500px at 90% 10%, rgba(246,166,200,.22), transparent 60%),
+      linear-gradient(180deg, var(--bg1), var(--bg2) 55%);}
+    .wrap{max-width:1160px;margin:26px auto;padding:18px}
+
+    .hero{position:relative;border:1px solid var(--line);border-radius:var(--r);background:rgba(255,255,255,.78);box-shadow:var(--shadow);
+      padding:18px 18px 14px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:46px;height:46px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+      display:grid;place-items:center;color:white;font-weight:900;box-shadow:0 12px 24px rgba(217,106,165,.22);}
+    h1{margin:0;font-size:20px}
+    .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+    .greet{font-weight:900}
+    .metaLine{color:var(--muted);font-size:12px}
+
+    /* top toast greeting (5s) */
+    .toast{position:absolute;left:14px;right:14px;top:12px;display:none;justify-content:center;pointer-events:none;z-index:5;}
+    .toast .list{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+    .item{border:1px solid var(--line);background:#fff;border-radius:16px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .item .meta{display:flex;flex-direction:column;gap:4px}
+    .item .title{font-weight:900}
+    .item .sub{font-size:12px;color:var(--muted)}
+    .item .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .miniBtn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:8px 10px;cursor:pointer;font-weight:900}
+    .miniBtn.primary{background:rgba(217,106,165,.12);border-color:rgba(217,106,165,.25)}
+    .miniBtn:active{transform:scale(.99)}
+    .pill{pointer-events:none;max-width:760px;width:fit-content;background:rgba(255,255,255,.92);
+      border:1px solid var(--line);border-radius:999px;padding:10px 14px;box-shadow:0 10px 26px rgba(0,0,0,.08);
+      font-weight:900}
+    .toast.show{display:flex;animation:fadeIn .18s ease-out}
+    @keyframes fadeIn{from{transform:translateY(-6px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+    .card{margin-top:16px;border:1px solid var(--line);border-radius:var(--r);background:var(--card);box-shadow:var(--shadow);overflow:hidden;}
+    .cardHd{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+    .cardHd h2{margin:0;font-size:16px}
+    .muted{color:var(--muted);font-size:13px}
+    .body{padding:18px}
+    .split{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}
+    @media (max-width:860px){.split{grid-template-columns:1fr}}
+    .panel{border:1px solid var(--line);border-radius:18px;padding:16px;background:linear-gradient(180deg, rgba(255,255,255,.95), #fff);}
+    .btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:none;border-radius:14px;
+      padding:12px 12px;cursor:pointer;font-weight:800;font-family:inherit;transition:transform .05s ease;user-select:none;}
+    .btn:active{transform:scale(.99)}
+    .btnPrimary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;box-shadow:0 12px 18px rgba(217,106,165,.18);}
+    .btnGhost{background:#fff;color:var(--ink);border:1px solid var(--line);}
+    .btnLink{background:transparent;border:none;padding:0;width:auto;color:var(--accent);font-weight:800;cursor:pointer;}
+    .btnSmall{width:auto;padding:10px 12px;border-radius:12px;font-weight:800}
+    .field{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+    label{font-size:12px;color:var(--muted)}
+    input,textarea{font:inherit;border:1px solid var(--line);border-radius:14px;padding:11px 12px;outline:none;background:#fff;}
+    input:focus,textarea:focus{border-color:rgba(217,106,165,.7);box-shadow:0 0 0 4px rgba(217,106,165,.12);}
+    textarea{min-height:86px;resize:vertical}
+    .row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:10px}
+    .status{margin-top:12px;border-radius:14px;padding:10px 12px;border:1px solid var(--line);color:var(--muted);font-size:13px;background:#fff;}
+    .status.ok{border-color:#a6f4c5;background:#f6fef9;color:var(--ok)}
+    .status.warn{border-color:#fda29b;background:#fff5f5;color:#7a1f1a}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+    .partsGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;padding:16px 18px}
+    @media (max-width:980px){.partsGrid{grid-template-columns:repeat(4,1fr)}}
+    @media (max-width:620px){.partsGrid{grid-template-columns:repeat(3,1fr)}}
+    .partBtn{border:1px solid var(--line);background:#fff;border-radius:16px;padding:12px 10px;cursor:pointer;display:flex;flex-direction:column;gap:6px;align-items:flex-start;box-shadow:0 10px 18px rgba(0,0,0,.04);}
+    .partBtn:hover{border-color:rgba(217,106,165,.55)}
+    /* part selected (picker + modal) */
+    .partBtn.active{
+      border-color:rgba(217,106,165,.95);
+      background:rgba(217,106,165,.12);
+      box-shadow:0 12px 20px rgba(217,106,165,.14);
+    }
+    .partNum{font-weight:900;font-size:16px}
+    .partMeta{color:var(--muted);font-size:12px}
+    .tag{font-size:11px;border:1px solid var(--line);border-radius:16px;padding:6px 10px;color:var(--muted);text-align:center;line-height:1.35;}
+
+    .tableWrap{overflow:auto}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    th,td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+    th{position:sticky;top:0;background:#fff;color:var(--muted);font-size:12px;text-align:center}
+    .thSub{margin-top:4px;color:var(--muted);font-size:11px}
+
+    .circles{display:grid;gap:6px;align-content:start;justify-content:center}
+    .grid5{grid-template-columns:repeat(5, 18px)}
+    .grid3{grid-template-columns:repeat(3, 18px)}
+    .grid2{grid-template-columns:repeat(2, 18px)}
+    .c{width:18px;height:18px;border-radius:999px;border:2px solid rgba(217,106,165,.45);background:transparent;cursor:pointer}
+    .c.on{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent}
+
+    /* tasmee3 checkbox - pink, no label */
+    .tasmee3Box{width:20px;height:20px;accent-color: var(--accent); cursor:pointer;}
+
+    .chk{display:flex;align-items:center;gap:8px}
+    .chk input{width:18px;height:18px;accent-color: var(--accent);}
+    .hide{display:none!important}
+    .footer{margin-top:12px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+
+    /* overlays */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.22);display:grid;place-items:center;padding:18px;z-index:50}
+    /* Avoid modals being cut off on small screens */
+    .modal{width:min(640px,100%);max-height:calc(100dvh - 36px);border-radius:22px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+    .modalHd{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex:0 0 auto}
+    .modalBd{padding:18px;overflow:auto;flex:1 1 auto}
+    @media (max-width:980px){
+      .overlay{padding:14px 14px calc(14px + 90px + env(safe-area-inset-bottom));}
+      .modal{max-height:calc(100dvh - (28px + 90px + env(safe-area-inset-bottom)));}
+    }
+    .stepDots{display:flex;gap:6px;align-items:center;margin-top:4px}
+    .dot{width:8px;height:8px;border-radius:999px;border:1px solid var(--line);background:#fff}
+    .dot.on{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent}
+    .mini{font-size:12px;color:var(--muted)}
+  
+
+/* App shell + sidebar (fixed edge) */
+.appShell{display:flex;align-items:flex-start;gap:16px;margin-top:16px}
+.mainArea{min-width:0;flex:1}
+
+/* Sidebar structure */
+.sideInner{display:flex;flex-direction:column;height:100%}
+.sideSpacer{flex:1}
+.sideBottom{margin-top:12px}
+
+/* Desktop: fixed full-height sidebar on the far right */
+.sideBar{
+  position:fixed;
+  top:26px;
+  right:18px;
+  height:calc(100vh - 52px);
+  width:264px;
+  padding:16px 12px;
+  border:1px solid var(--line);
+  border-radius:var(--r);
+  background:rgba(255,255,255,.90);
+  backdrop-filter: blur(8px);
+  z-index:120; /* فوق المحتوى */
+  overflow:auto;
+}
+/* اتركي مساحة بالمحتوى حتى لا ينغطي تحت القائمة */
+.wrap{padding-right: calc(264px + 34px);}
+
+.sideHead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.sideTitle{font-weight:900;font-size:14px;color:var(--ink)}
+.collapseBtn{width:auto;padding:8px 10px;border-radius:12px}
+.nav{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+
+.navBtn{
+  display:flex;align-items:center;gap:10px;
+  border:1px solid transparent;
+  background:transparent;
+  border-radius:14px;
+  padding:10px 10px;
+  cursor:pointer;
+  font-weight:800;
+  font-family:inherit;
+  color:var(--ink);
+  transition:background .12s ease, border-color .12s ease, transform .05s ease;
+  width:100%;
+  text-align:right;
+}
+.navBtn:hover{background:rgba(217,106,165,.08)}
+.navBtn:active{transform:scale(.99)}
+.navBtn.active{
+  background:rgba(217,106,165,.12);
+  border-color:rgba(217,106,165,.25);
+}
+
+/* Bigger icons + pink */
+.navIcon{
+  width:22px;height:22px;display:inline-grid;place-items:center;
+  color:var(--accent);
+  font-weight:900;
+  flex:0 0 22px;
+}
+.navIcon svg{width:22px;height:22px;display:block}
+.navBtn span.txt{font-size:13px}
+
+.sideBar.collapsed{width:76px;padding:14px 10px}
+.sideBar.collapsed .sideTitleText{display:none}
+.sideBar.collapsed .navBtn span.txt{display:none}
+.sideBar.collapsed .navBtn{justify-content:center}
+.sideBar.collapsed .nav{gap:10px}
+.sideBar.collapsed .sideHead{justify-content:center}
+
+/* Update wrap padding when collapsed */
+body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
+
+/* Mobile bottom navigation */
+.bottomNav{
+  display:none;
+  position:fixed;
+  left:0; right:0; bottom:0;
+  background:rgba(255,255,255,.92);
+  border-top:1px solid var(--line);
+  box-shadow:0 -10px 22px rgba(0,0,0,.06);
+  padding:10px 14px;
+  z-index:90;
+  backdrop-filter: blur(10px);
+}
+.bottomNavInner{max-width:520px;margin:0 auto;display:flex;justify-content:space-around;gap:10px}
+.bottomBtn{
+  border:0;background:transparent;cursor:pointer;font-family:inherit;
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:6px 10px;border-radius:14px;
+  color:var(--muted);font-weight:800;font-size:11px;
+  min-width:84px;
+}
+.bottomBtn .ico{width:22px;height:22px;display:grid;place-items:center;color:var(--accent)}
+.bottomBtn.active{background:rgba(217,106,165,.12);color:var(--ink)}
+.bottomBtn.active .ico{color:var(--accent)}
+
+/* Bottom sheet (More) */
+.sheetBackdrop{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.28);
+  display:none; z-index:95;
+}
+.sheetBackdrop.show{display:block}
+.bottomSheet{
+  position:fixed; left:0; right:0; bottom:-420px;
+  background:#fff;
+  border-top-left-radius:20px;
+  border-top-right-radius:20px;
+  border:1px solid var(--line);
+  box-shadow:0 -18px 40px rgba(0,0,0,.12);
+  padding:14px 14px 18px;
+  z-index:96;
+  transition:bottom .18s ease;
+}
+.bottomSheet.show{bottom:0}
+.sheetHandle{width:44px;height:5px;border-radius:999px;background:rgba(0,0,0,.12);margin:0 auto 12px}
+.sheetItem{width:100%;text-align:right;border:1px solid var(--line);background:#fff;border-radius:14px;
+  padding:12px 12px;cursor:pointer;font-weight:900}
+.sheetItem:active{transform:scale(.99)}
+
+/* Responsive switch */
+@media (max-width:980px){
+  .wrap{padding-right:18px;padding-bottom:86px;} /* space for bottom nav */
+  body.sidebarCollapsed .wrap{padding-right:18px;}
+  .sideBar{display:none;}
+  .bottomNav{display:block;}
+}
+
+/* Backdrop kept (used for sheet too) */
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.25);display:none;z-index:78}
+.backdrop.show{display:block}
+
+.view{display:none !important;}
+.view.show{display:block !important;}
+
+    .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.25);display:none;z-index:55}    .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.22);display:none;z-index:55}
+    .backdrop.show{display:block}
+    .view{display:none}
+    .view.show{display:block}
+
+/* ===== v24_40: Soft part colors with correct logic =====
+   - default (no class): not started
+   - partInProgress: started but not finished (pink)
+   - partMemDone: memorized 100% but fixation <100 (orange)
+   - partFixDone: memorized 100% and fixation 100% (green)
+*/
+.partBtn.partInProgress{
+  background:#fde7f3 !important;
+  border-color:#f5a5c8 !important;
+}
+.partBtn.partMemDone{
+  background:#fff1df !important;
+  border-color:#f6b26b !important;
+}
+.partBtn.partFixDone{
+  background:#e9f7ef !important;
+  border-color:#8fd19e !important;
+}
+
+
+
+/* Member progress ring (beside member name) */
+.progRing{
+  --p:0;
+  width:42px;height:42px;border-radius:999px;
+  background: conic-gradient(var(--accent) calc(var(--p)*1%), rgba(217,106,165,.18) 0);
+  display:grid;place-items:center;
+  position:relative;
+  flex:0 0 42px;
+}
+.progRing::before{
+  content:"";
+  position:absolute;inset:4px;
+  background:#fff;border-radius:999px;
+  border:1px solid rgba(241,216,227,.9);
+}
+.progRing > span{
+  position:relative;
+  font-size:11px;
+  font-weight:900;
+  color:var(--ink);
+}
+.progRing.empty{background:rgba(217,106,165,.10)}
+@media (max-width:600px){
+  .progRing{width:38px;height:38px;flex-basis:38px}
+  .progRing::before{inset:4px}
+  .progRing > span{font-size:10px}
+}
+
+/* ===== v24_50 Rank next to name (inside title) ===== */
+.rankBadge{
+  min-width:22px;
+  height:22px;
+  border-radius:999px;
+  background:#fde7f3;
+  color:#7a294e;
+  font-weight:800;
+  font-size:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 22px;
+}
+.item .title.titleFlex{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  justify-content:flex-start; /* in RTL => right */
+}
+
+</style>
+</head>
+<body>
+  <aside class="sideBar" id="sideBar"><div class="sideInner">
+    <div class="sideHead">
+      <div class="sideTitle"><span class="sideTitleText">القائمة</span></div>
+      <button class="btn btnGhost collapseBtn" id="collapseBtn" type="button">❮❮</button>
+    </div>
+
+    <div class="nav">
+      <button class="navBtn active" id="navMy" type="button">
+        <span class="navIcon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 12a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12Zm0 2c-4.1 0-7.5 2.2-7.5 5v1h15v-1c0-2.8-3.4-5-7.5-5Z"/></svg></span><span class="txt">صفحتي</span>
+      </button>
+      <button class="navBtn" id="navGroups" type="button">
+        <span class="navIcon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M16.5 13c-2.6 0-4.8 1.3-5.5 3.2.6.7 1 1.5 1 2.3V20h9v-1.5c0-3-2.2-5.5-4.5-5.5ZM8.5 13c-3.3 0-6 2-6 4.5V20h9v-1.5c0-2.5-2.7-5.5-3-5.5Zm0-2a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm8 0a2.5 2.5 0 1 0-2.5-2.5A2.5 2.5 0 0 0 16.5 11Z"/></svg></span><span class="txt">مجموعاتي</span>
+      </button>
+</div>
+
+    <div class="sideSpacer"></div>
+        <div class="sideBottom">
+      <button class="navBtn" id="navLogout" type="button">
+        <span class="navIcon">🚪</span><span class="txt">تسجيل خروج</span>
+      </button>
+    </div>
+  </div></aside>
+
+  <div class="wrap">
+    <div class="hero">
+      <div class="toast" id="toast"><div class="pill" id="toastText"></div></div>
+
+      <div class="brand">
+        <div class="logo">ق</div>
+        <div><h1>متابعة حفظ القرآن</h1></div>
+      </div>
+      <div class="right">
+        <div id="greet" class="greet"></div>
+        <div id="globalLast" class="metaLine"></div>
+      </div>
+    
+    </div>
+
+<div class="backdrop" id="backdrop"></div>
+
+<div class="appShell">
+
+  <main class="mainArea">
+    <section class="view show" id="viewMy">
+<!-- Intro Wizard -->
+    <div id="introOverlay" class="overlay hide">
+      <div class="modal">
+        <div class="modalHd">
+          <div>
+            <div id="introTitle" style="font-weight:900;font-size:16px">🌸</div>
+            <div id="introSub" class="mini" style="margin-top:6px"></div>
+            <div class="stepDots" id="dots"></div>
+          </div>
+          <button class="btn btnGhost btnSmall" id="closeIntroBtn" style="width:auto">إغلاق</button>
+        </div>
+        <div class="modalBd">
+          <div id="introBody" style="line-height:1.85"></div>
+          <div class="row" style="margin-top:16px">
+            <button class="btn btnGhost btnSmall" id="prevIntroBtn" style="width:auto">السابق</button>
+            <button class="btn btnPrimary btnSmall" id="nextIntroBtn" style="width:auto">التالي</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Name Modal (first time) -->
+    <div id="nameOverlay" class="overlay hide">
+      <div class="modal">
+        <div class="modalHd">
+          <div>
+            <div style="font-weight:900;font-size:16px">أهلًا في الحلقة 🌸</div>
+            <div class="mini" style="margin-top:6px">اكتبي اسمك مرة واحدة فقط، وبعدها رح نرحّب فيك فيه.</div>
+          </div>
+          <button class="btn btnGhost btnSmall" id="skipNameBtn" style="width:auto">تخطي</button>
+        </div>
+        <div class="modalBd">
+          <div class="field">
+            <label>اسمك</label>
+            <input id="displayName" placeholder="مثال: مريم" />
+          </div>
+          <div class="row" style="margin-top:14px">
+            <button class="btn btnPrimary btnSmall" id="saveNameBtn" style="width:auto">حفظ</button>
+          </div>
+          <div class="status" id="nameStatus" style="margin-top:12px">✨</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="authCard" class="card">
+      <div class="cardHd"><h2>تسجيل الدخول</h2><div class="muted">اختاري الطريقة الأنسب لك.</div></div>
+      <div class="body split">
+        <div class="panel">
+          <div class="muted" style="margin-bottom:10px">الأسرع: الدخول بحساب Google</div>
+          <button class="btn btnGhost" id="googleBtn">
+            <svg width="22" height="22" viewBox="0 0 48 48" aria-hidden="true">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.2C12.43 13.08 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.14-3.09-.4-4.55H24v9.02h12.94c-.56 3.02-2.25 5.58-4.79 7.3l7.73 5.99C44.41 38.3 46.98 31.97 46.98 24.55z"/>
+              <path fill="#FBBC05" d="M10.54 28.42c-.48-1.45-.76-2.99-.76-4.42s.27-2.97.76-4.42l-7.98-6.2C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.62l7.98-6.2z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.14 15.91-5.81l-7.73-5.99c-2.15 1.45-4.9 2.3-8.18 2.3-6.26 0-11.57-3.58-13.47-8.63l-7.98 6.2C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            المتابعة باستخدام Google
+          </button>
+          <div class="status" id="authStatus">سجّلي دخولك وابدئي 🌸</div>
+          <div class="row" style="margin-top:12px"><span class="muted">بدون Google؟</span><button class="btnLink" id="showEmailBtn">استخدمي الإيميل + كلمة مرور</button></div>
+        </div>
+
+        <div class="panel" id="emailPanel" style="display:none">
+          <div class="muted" style="margin-bottom:6px">الدخول بالإيميل</div>
+          <div class="field"><label>البريد الإلكتروني</label><input id="email" placeholder="name@gmail.com" autocomplete="email"/></div>
+          <div class="field"><label>كلمة المرور</label><input id="password" type="password" placeholder="********" autocomplete="current-password"/></div>
+          <div class="row">
+            <button class="btn btnPrimary btnSmall" id="signInBtn" style="width:auto">دخول</button>
+            <button class="btn btnGhost btnSmall" id="signUpBtn" style="width:auto">إنشاء حساب</button>
+          </div>
+          <div class="row"><button class="btnLink" id="resetPwBtn">نسيت كلمة المرور؟</button><button class="btnLink" id="hideEmailBtn">رجوع</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dash" class="card hide">
+      <div class="cardHd">
+        <div><h2>الأجزاء</h2><div class="muted">اختاري جزءًا للمتابعة</div></div>
+        <div class="actions">
+          <button class="btn btnGhost btnSmall" id="helpBtn" style="width:auto">شرح النظام</button>
+          <button class="btn btnGhost btnSmall" id="logoutBtn2" style="width:auto">خروج</button>
+        </div>
+      </div>
+      <div class="partsGrid" id="partsGrid"></div>
+    </div>
+
+    <!-- PART VIEW -->
+    <div id="partView" class="card hide">
+      <div class="cardHd">
+        <div>
+          <h2 id="partTitle">الجزء</h2>
+          <div class="muted" id="partSubtitle">صفحات الجزء</div>
+        </div>
+        <div class="actions">
+          <button class="btn btnGhost btnSmall" id="backBtn" style="width:auto">رجوع</button>
+          <button class="btn btnGhost btnSmall" id="logoutBtn" style="width:auto">خروج</button>
+        </div>
+      </div>
+
+      <div style="padding:12px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+        <div class="chk">
+          <input id="partTasmee3" type="checkbox"/>
+          <label for="partTasmee3" style="margin:0">تسميع الجزء غيبًا</label>
+        </div>
+        <div class="chk">
+          <input id="partTest" type="checkbox"/>
+          <label for="partTest" style="margin:0">اختبار المواضع (اختبار الجزء)</label>
+        </div>
+        <div class="metaLine" id="lastSaved">آخر تعديل: —</div>
+      </div>
+
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:90px">رقم الصفحة</th>
+
+              <th style="min-width:220px">
+                تلاوة غيبًا
+                <div class="thSub">10 مرات</div>
+              </th>
+
+              <th style="min-width:200px">
+                مراجعة قريبة
+                <div class="thSub">الأسبوع الأول</div>
+              </th>
+
+              <th style="min-width:180px">
+                مراجعة بعيدة
+                <div class="thSub">خلال الشهر</div>
+              </th>
+
+              <th style="min-width:140px">
+                تسميع
+              </th>
+
+              <th style="min-width:240px">ملاحظات</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+
+      <div style="padding:14px 18px;border-top:1px solid var(--line)">
+        <div class="field"><label>ملاحظات للجزء</label><textarea id="details" placeholder="اختياري..."></textarea></div>
+        <div class="footer">
+          <div class="muted">الحفظ تلقائي ✨</div>
+          
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="viewGroups">
+  <div class="card">
+    <div class="cardHd">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <h2 style="margin:0">مجموعاتي</h2>
+        <button class="btn" id="goCreateFromGroups" type="button">إنشاء مجموعة</button>
+      </div>
+    </div>
+    <div class="body">
+      <div class="panel" style="margin-bottom:10px">
+        <div style="font-weight:900;margin-bottom:6px">دعواتي</div>
+        <div class="muted" style="margin-bottom:10px">إذا في بنت دعتك لمجموعة، بتظهر هون. اضغطي قبول للدخول.</div>
+        <div id="invitesList" class="list"></div>
+        <div id="invitesEmpty" class="muted" style="display:none">لا توجد دعوات حالياً.</div>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div style="font-weight:900">مجموعاتي</div>
+          <button class="btn btnGhost" id="refreshGroups" type="button">تحديث</button>
+        </div>
+        <div class="muted" style="margin:8px 0 10px">اضغطي على أي مجموعة لإدارة الدعوات (قريبًا: ترتيب البنات والتقدم).</div>
+        <div id="myGroupsList" class="list"></div>
+        <div id="myGroupsEmpty" class="muted" style="display:none">لسا ما انضمّيتي لأي مجموعة.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+    <section class="view" id="viewGroup">
+  <div class="card">
+    <div class="cardHd">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div>
+          <h2 style="margin:0" id="groupTitle">المجموعة</h2>
+          <div class="muted" id="groupSub">...</div>
+        </div>
+        <button class="btn btnGhost" id="backToGroupsFromGroup" type="button">رجوع</button>
+      </div>
+    </div>
+    <div class="body">
+
+      <div class="panel" id="myPartsSummaryPanel" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <div>
+            <div style="font-weight:900;margin-bottom:6px">أجزائي في هذه المجموعة</div>
+            <div class="muted" id="myPartsSummaryText">...</div>
+          </div>
+          <button class="btn" id="editMyPartsBtn" type="button">اختيار / تعديل الأجزاء</button>
+        </div>
+      </div>
+      <div class="panel" id="pickPartsPanel" style="display:none"margin-bottom:12px">
+        <div style="font-weight:900;margin-bottom:6px">اختاري الأجزاء الخاصة فيك</div>
+        <div class="muted" id="pickPartsHint" style="margin-bottom:10px">اختاري بالضبط N أجزاء لهدفك في هذه المجموعة.</div>
+
+        <div id="partsPickerGrid" class="partsGrid"></div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center;justify-content:space-between">
+          <div class="muted" id="partsPickerCount">0 / 0</div>
+          <button class="btn" id="savePickedParts" type="button">حفظ اختياري</button>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div style="font-weight:900">دعوة عضوة</div>
+        </div>
+        <div class="muted" style="margin:6px 0 10px">اكتبي إيميلها. ستظهر لها دعوة في “دعواتي” لتقبل أو ترفض.</div>
+        <div style="display:grid;grid-template-columns:1fr 120px;gap:10px;align-items:end">
+          <input id="groupInviteEmail" class="in" placeholder="name@gmail.com" />
+          <button class="btn" id="groupSendInvite" type="button">إرسال</button>
+        </div>
+
+        <div style="margin-top:10px">
+          <div class="muted" style="margin-bottom:6px">الدعوات المرسلة</div>
+          <div id="groupInvitesList" class="list"></div>
+          <div id="groupInvitesEmpty" class="muted" style="display:none">لا توجد دعوات بعد.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <div style="font-weight:900">العضوات</div>
+          
+        </div>
+        <div class="muted" style="margin-top:6px">هنا سنعرض الترتيب والنِّسَب لاحقًا. حالياً نعرض أسماء العضوات فقط.</div>
+        <div id="groupMembersList" class="list"></div>
+        <div id="groupMembersEmpty" class="muted" style="display:none">لا يوجد أعضاء بعد.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="viewCreate">
+  <div class="card">
+    <div class="cardHd">
+      <div>
+        <h2>إنشاء مجموعة</h2>
+        <div class="muted">هدف المجموعة الآن: عدد أجزاء (N). كل عضوة تختار بالضبط N أجزاء.</div>
+      </div>
+    </div>
+    <div class="body">
+      <div class="panel" style="margin-bottom:10px">
+        <div style="display:grid;grid-template-columns:1fr 120px;gap:10px;align-items:end">
+          <div>
+            <label class="muted" for="groupName" style="display:block;margin-bottom:6px">اسم المجموعة</label>
+            <input id="groupName" class="in" placeholder="مثال: حلقة الهمة" />
+          </div>
+          <div>
+            <label class="muted" for="groupN" style="display:block;margin-bottom:6px">عدد الأجزاء (N)</label>
+            <input id="groupN" class="in" type="number" min="1" max="30" value="1"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn" id="createGroupBtn" type="button" onclick="try{window.createGroup&&window.createGroup()}catch(e){try{alert(e?.message||e)}catch(_){}}">إنشاء</button>
+          <button class="btn btnGhost" id="backToGroups" type="button">رجوع لمجموعاتي</button>
+        </div>
+        <div id="createdGroupBox" class="panel" style="display:none;margin-top:10px">
+          <div style="font-weight:900;margin-bottom:6px">تم إنشاء المجموعة ✅</div>
+          <div class="muted" id="createdGroupMeta"></div>
+
+          <div style="margin-top:10px;font-weight:900">دعوة عضوات</div>
+          <div class="muted" style="margin:6px 0 10px">أي عضوة بالمجموعة تقدر تدعو بالإيميل. الدعوة تظهر للبنت لما تدخل وتضغط “قبول”.</div>
+
+          <div style="display:grid;grid-template-columns:1fr 120px;gap:10px;align-items:end">
+            <div>
+              <label class="muted" for="inviteEmail" style="display:block;margin-bottom:6px">إيميل البنت</label>
+              <input id="inviteEmail" class="in" placeholder="name@gmail.com" />
+            </div>
+            <button class="btn" id="sendInviteBtn" type="button">إرسال</button>
+          </div>
+
+          <div style="margin-top:10px">
+            <div class="muted" style="margin-bottom:6px">الدعوات المرسلة</div>
+            <div id="sentInvitesList" class="list"></div>
+            <div id="sentInvitesEmpty" class="muted" style="display:none">لا توجد دعوات بعد.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div style="font-weight:900;margin-bottom:6px">ملاحظة</div>
+        <div class="muted">النسخة القادمة: داخل كل مجموعة نضيف ترتيب البنات + صفحة تفاصيل كل بنت (نِسَب فقط) + اختيار الأجزاء بالضبط N.</div>
+      </div>
+    </div>
+  </div>
+</section>
+  </main>
+</div>
+</div>
+
+<script>
+  window.addEventListener('DOMContentLoaded', ()=>{
+    const sideBar = document.getElementById("sideBar");
+    const collapseBtn = document.getElementById("collapseBtn");
+
+    const btns = {
+      my: document.getElementById("navMy"),
+      groups: document.getElementById("navGroups"),
+      logout: document.getElementById("navLogout"),
+    };
+    const views = {
+      my: document.getElementById("viewMy"),
+      groups: document.getElementById("viewGroups"),
+      group: document.getElementById("viewGroup"),
+      create: document.getElementById("viewCreate"),
+    };
+
+    const m = {
+      my: document.getElementById("mNavMy"),
+      groups: document.getElementById("mNavGroups"),
+      more: document.getElementById("mNavMore"),
+    };
+    const sheetBackdrop = document.getElementById("sheetBackdrop");
+    const bottomSheet = document.getElementById("bottomSheet");
+    const sheetLogout = document.getElementById("sheetLogout");
+
+    function isMobile(){ return window.matchMedia("(max-width: 980px)").matches; }
+
+    function closeSheet(){
+      sheetBackdrop?.classList.remove("show");
+      bottomSheet?.classList.remove("show");
+      bottomSheet?.setAttribute("aria-hidden","true");
+    }
+    function openSheet(){
+      sheetBackdrop?.classList.add("show");
+      bottomSheet?.classList.add("show");
+      bottomSheet?.setAttribute("aria-hidden","false");
+    }
+
+    function setActive(which){
+      // Force-hide all views (hard reset)
+      Object.values(views).forEach(v=>{
+        if(!v) return;
+        v.classList.remove("show");
+        v.style.display = "none";
+      });
+
+      // Activate selected view
+      const target = views[which];
+      if(target){
+        target.style.display = "block";
+        target.classList.add("show");
+      }
+
+      // Desktop nav active
+      Object.values(btns).forEach(b=>b && b.classList.remove("active"));
+      if(btns[which]) btns[which].classList.add("active");
+      if((which==="group" || which==="create") && btns.groups) btns.groups.classList.add("active");
+
+      // Mobile nav active
+      Object.values(m).forEach(b=>b && b.classList.remove("active"));
+      if(which==="my" && m.my) m.my.classList.add("active");
+      if((which==="groups" || which==="group" || which==="create") && m.groups) m.groups.classList.add("active");
+
+      closeSheet();
+      localStorage.setItem("activeView", which);
+
+      try{ window.scrollTo({ top: 0, behavior: "smooth" }); }catch(e){ window.scrollTo(0,0); }
+    }
+
+    const saved = localStorage.getItem("activeView") || "my";
+    setActive(saved);
+
+    // Desktop collapse
+    collapseBtn?.addEventListener("click", ()=>{
+      const collapsed = sideBar.classList.toggle("collapsed");
+      document.body.classList.toggle("sidebarCollapsed", collapsed);
+      collapseBtn.textContent = collapsed ? "❯❯" : "❮❮";
+      localStorage.setItem("sideCollapsed", collapsed ? "1" : "0");
+    });
+    const c = localStorage.getItem("sideCollapsed")==="1";
+    if(c && !isMobile()){
+      sideBar.classList.add("collapsed");
+      document.body.classList.add("sidebarCollapsed");
+      collapseBtn.textContent = "❯❯";
+    }
+
+    // Desktop nav handlers
+    btns.my?.addEventListener("click", ()=>setActive("my"));
+    btns.groups?.addEventListener("click", ()=>setActive("groups"));
+    btns.logout?.addEventListener("click", ()=>{
+      const b = document.getElementById("logoutBtn2") || document.getElementById("logoutBtn");
+      b?.click();
+    });
+
+    // Mobile bottom nav handlers
+    m.my?.addEventListener("click", ()=>setActive("my"));
+    m.groups?.addEventListener("click", ()=>setActive("groups"));
+    m.more?.addEventListener("click", ()=>openSheet());
+    sheetBackdrop?.addEventListener("click", closeSheet);
+
+    sheetLogout?.addEventListener("click", ()=>{
+      closeSheet();
+      const b = document.getElementById("logoutBtn2") || document.getElementById("logoutBtn");
+      b?.click();
+    });
+
+    // groups page create button
+    document.getElementById("goCreateFromGroups")?.addEventListener("click", ()=>setActive("create"));
+
+    window.__setActiveView = setActive;
+    });
+</script>
+
+<script type="module">// Never fail silently
+window.addEventListener('error', (e)=>{
+  try{ showToast(`خطأ: ${e?.message || 'unknown'}`); }catch(_){ }
+  try{ console.error(e); }catch(_){ }
+});
+window.addEventListener('unhandledrejection', (e)=>{
+  try{ showToast(`خطأ: ${e?.reason?.code || e?.reason?.message || 'promise rejected'}`); }catch(_){ }
+  try{ console.error(e); }catch(_){ }
+});
+
+
+  const firebaseConfig = {
+  "apiKey": "AIzaSyA4Q9sgwE7U0tIAE5obAoU6OIPKd-9_7Dk",
+  "authDomain": "safwa3-ad381.firebaseapp.com",
+  "projectId": "safwa3-ad381",
+  "storageBucket": "safwa3-ad381.firebasestorage.app",
+  "messagingSenderId": "380123503518",
+  "appId": "1:380123503518:web:c520823283b420d499148f",
+  "measurementId": "G-6SZ4HR9BDK"
+};
+  const PART_RANGES = {"1": {"start": 1, "end": 21}, "2": {"start": 22, "end": 41}, "3": {"start": 42, "end": 61}, "4": {"start": 62, "end": 81}, "5": {"start": 82, "end": 101}, "6": {"start": 102, "end": 121}, "7": {"start": 122, "end": 141}, "8": {"start": 142, "end": 161}, "9": {"start": 162, "end": 181}, "10": {"start": 182, "end": 201}, "11": {"start": 202, "end": 221}, "12": {"start": 222, "end": 241}, "13": {"start": 242, "end": 261}, "14": {"start": 262, "end": 281}, "15": {"start": 282, "end": 301}, "16": {"start": 302, "end": 321}, "17": {"start": 322, "end": 341}, "18": {"start": 342, "end": 361}, "19": {"start": 362, "end": 381}, "20": {"start": 382, "end": 401}, "21": {"start": 402, "end": 421}, "22": {"start": 422, "end": 441}, "23": {"start": 442, "end": 461}, "24": {"start": 462, "end": 481}, "25": {"start": 482, "end": 501}, "26": {"start": 502, "end": 521}, "27": {"start": 522, "end": 541}, "28": {"start": 542, "end": 561}, "29": {"start": 562, "end": 581}, "30": {"start": 582, "end": 604}};
+
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+  import {getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail , setPersistence , browserLocalPersistence} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+  import {getFirestore, doc, getDoc, setDoc, collection, addDoc, updateDoc, deleteDoc, serverTimestamp, query, where, getDocs, onSnapshot, orderBy , writeBatch} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+  const el = (id)=>document.getElementById(id);
+
+  const rowsEl = el("rows");
+  const authStatusEl = el("authStatus");
+  const partsGridEl = el("partsGrid");
+  const greetEl = el("greet");
+  const globalLastEl = el("globalLast");
+  const lastSavedEl = el("lastSaved");
+
+  const toastEl = el("toast");
+  const toastTextEl = el("toastText");
+
+  const introOverlay = el("introOverlay");
+  const introTitle = el("introTitle");
+  const introSub = el("introSub");
+  const introBody = el("introBody");
+  const dotsEl = el("dots");
+  const prevIntroBtn = el("prevIntroBtn");
+  const nextIntroBtn = el("nextIntroBtn");
+
+  function fmtDate(iso){
+    if(!iso) return "—";
+    try{ return new Date(iso).toLocaleString("ar"); }catch{ return "—"; }
+  }
+
+  function showToast(msg){
+  if(!toastEl || !toastTextEl) return;
+  toastTextEl.textContent = (msg ?? "").toString();
+  toastEl.classList.add("show");
+  clearTimeout(window.__toastT);
+  window.__toastT = setTimeout(()=>toastEl.classList.remove("show"), 2600);
+}
+
+  const toast = (title, msg)=> showToast((msg || title || "").toString());
+
+  window.addEventListener('error', (e)=>{ try{ showToast('خطأ: ' + (e.message||'')); }catch(_){} });
+
+
+  function setAuthStatus(msg, kind=""){
+    authStatusEl.textContent = msg;
+    authStatusEl.className = "status" + (kind ? " "+kind : "");
+  }
+
+  function showOnly(which){
+    el("authCard").classList.toggle("hide", which !== "auth");
+    el("dash").classList.toggle("hide", which !== "dash");
+    el("partView").classList.toggle("hide", which !== "part");
+  }
+// Intro steps (wizard)
+  const INTRO_STEPS = [
+    { title:"أهلًا في الحلقة 🌸", sub:"هدفنا حفظ ثابت ومتين، مش بس “نخلص صفحات”.",
+      body:"عشان هيك نمشي على نظام بسيط: <b>لكل صفحة 3 مراحل + تسميع واحد</b> ✅<br><br><span class='mini'>ملاحظة: هذا النظام لمصحف المدينة (604 صفحة).</span>" },
+    { title:"المرحلة الأولى — تلاوة غيبًا (بدون أخطاء)", sub:"بعد ما نحفظ الصفحة:",
+      body:"• نقرأها <b>10 مرات غيبًا</b> بدون أخطاء.<br>• كل مرة صحيحة نلوّن دائرة من <b>تلاوة غيبًا</b>.<br><br><span class='mini'>إذا صار خطأ كبير: نثبّت ونكمل لحد ما تصير التلاوة سليمة.</span>" },
+    { title:"المرحلة الثانية — المراجعة القريبة (الأسبوع الأول)", sub:"خلال الأسبوع الأول بعد حفظ الصفحة:",
+      body:"• نراجع الصفحة عدة مرات (حسب طاقتنا).<br>• لكل مراجعة نلوّن دائرة من <b>مراجعة قريبة</b>." },
+    { title:"المرحلة الثالثة — المراجعة البعيدة (خلال الشهر)", sub:"خلال الشهر بعد ",
+      body:"• نراجع الصفحة عدة مرات متفرّقة.<br>• لكل مراجعة نلوّن دائرة من <b>مراجعة بعيدة</b>." },
+    { title:"التسميع — مرة واحدة", sub:"التسميع ممكن قبل أو بعد (ما في مشكلة).",
+      body:"بعد ما الصفحة تكون جاهزة: نسمّعها غيبًا (على صاحبة/مُسَمِّعة).<br>لما يتم التسميع بنجاح نعلّم مربع <b>تسميع</b>.<br><br><b>التسميع للصفحة يكون مرة واحدة فقط.</b>" },
+    { title:"إتمام الجزء ✅🌙", sub:"حتى نعتبر الجزء مكتمل:",
+      body:"لازم نعمل خطوتين:<br>1) ✅ <b>تسميع الجزء غيبًا</b><br>2) ✅ <b>اختبار المواضع (اختبار الجزء)</b><br><br><span class='mini'>“مكتمل ✅” للجزء لا يظهر إلا بعد إتمام التسميع + الاختبار.</span>" }
+  ];
+  let introIdx = 0;
+
+  function renderIntro(){
+    const s = INTRO_STEPS[introIdx];
+    introTitle.textContent = s.title;
+    introSub.textContent = s.sub;
+    introBody.innerHTML = s.body;
+
+    dotsEl.innerHTML = "";
+    INTRO_STEPS.forEach((_,i)=>{
+      const d = document.createElement("div");
+      d.className = "dot" + (i===introIdx ? " on" : "");
+      dotsEl.appendChild(d);
+    });
+
+    prevIntroBtn.style.visibility = introIdx===0 ? "hidden" : "visible";
+    nextIntroBtn.textContent = introIdx===INTRO_STEPS.length-1 ? "ابدئي الآن" : "التالي";
+  }
+
+  function openIntro(){ introIdx=0; renderIntro(); introOverlay.classList.remove("hide"); }
+  function closeIntro(){ introOverlay.classList.add("hide"); }
+
+  prevIntroBtn.addEventListener("click", ()=>{ if(introIdx>0){ introIdx--; renderIntro(); }});
+  nextIntroBtn.addEventListener("click", async ()=>{
+    if(introIdx < INTRO_STEPS.length-1){ introIdx++; renderIntro(); return; }
+    closeIntro(); await markIntroSeen();
+  });
+  el("closeIntroBtn").addEventListener("click", async ()=>{ closeIntro(); await markIntroSeen(); });
+
+  // email panel toggle
+  el("showEmailBtn").addEventListener("click", ()=>{ el("emailPanel").style.display="block"; });
+  el("hideEmailBtn").addEventListener("click", ()=>{ el("emailPanel").style.display="none"; });
+
+  // circles builders
+  function makeCircles(n, cols, stateArr){
+    const wrap = document.createElement("div");
+    wrap.className = "circles " + (cols===5 ? "grid5" : cols===3 ? "grid3" : "grid2");
+    for(let i=0;i<n;i++){
+      const c = document.createElement("div");
+      c.className = "c" + (stateArr?.[i] ? " on" : "");
+      c.addEventListener("click", ()=>{
+        c.classList.toggle("on");
+        scheduleAutosave();
+      });
+      wrap.appendChild(c);
+    }
+    return wrap;
+  }
+  function readCircles(container){
+    return [...container.querySelectorAll(".c")].map(x=>x.classList.contains("on"));
+  }
+
+  // ---- Compatibility layer (keeps old saved data visible) ----
+  function toBoolArray(v, n){
+    if(Array.isArray(v)){
+      // normalize to booleans, pad/truncate
+      const out = v.map(Boolean).slice(0,n);
+      while(out.length<n) out.push(false);
+      return out;
+    }
+    if(typeof v === "number"){
+      // treat number as count of completed circles
+      const out = Array(n).fill(false);
+      for(let i=0;i<Math.min(n, v);i++) out[i]=true;
+      return out;
+    }
+    return Array(n).fill(false);
+  }
+
+  function normalizePage(raw){
+    const pg = raw && typeof raw === "object" ? raw : {};
+    // recite (10)
+    const recite = pg.recite ?? pg.tilawa ?? pg.mem ?? pg.newMem ?? pg.hifz ?? pg.ghiban ?? pg.talaawa;
+    // near (6)
+    const near = pg.near ?? pg.close ?? pg.closeReview ?? pg.nearReview ?? pg.week ?? pg.week1 ?? pg.qareeba ?? pg.reviewClose;
+    // far (4)
+    const far = pg.far ?? pg.farReview ?? pg.month ?? pg.ba3eeda ?? pg.reviewFar ?? pg.longReview;
+    // tasmee3 bool
+    const tas = pg.tasmee3 ?? pg.tasme3 ?? pg.tasmee ?? pg.tasmee3Done ?? pg.tasmee3Checked ?? pg.tasmeeDone ?? false;
+
+    return {
+      recite: toBoolArray(recite, 10),
+      near: toBoolArray(near, 6),
+      far: toBoolArray(far, 4),
+      tasmee3: !!tas,
+      notes: (pg.notes ?? pg.note ?? pg.comment ?? "").toString()
+    };
+  }
+  // ------------------------------------------------------------
+
+  function rowForPage(pageNum, dataRaw={}){
+    const data = normalizePage(dataRaw);
+
+    const tr = document.createElement("tr");
+    tr.dataset.page = String(pageNum);
+
+    const tdPage = document.createElement("td"); tdPage.textContent = String(pageNum);
+
+    const tdRecite = document.createElement("td");
+    tdRecite.appendChild(makeCircles(10, 5, data.recite));
+
+    const tdNear = document.createElement("td");
+    tdNear.appendChild(makeCircles(6, 3, data.near));
+
+    const tdFar = document.createElement("td");
+    tdFar.appendChild(makeCircles(4, 2, data.far));
+
+    const tdTas = document.createElement("td");
+    const tasWrap = document.createElement("div");
+    tasWrap.style.display = "flex";
+    tasWrap.style.justifyContent = "center";
+    const chk = document.createElement("input");
+    chk.type = "checkbox";
+    chk.className = "tasmee3Box";
+    chk.checked = !!data.tasmee3;
+    chk.addEventListener("change", scheduleAutosave);
+    tasWrap.appendChild(chk);
+    tdTas.appendChild(tasWrap);
+
+    const tdNotes = document.createElement("td");
+    const notesWrap = document.createElement("div");
+    notesWrap.style.display = "flex";
+    notesWrap.style.justifyContent = "center";
+    const inpNotes = document.createElement("input");
+    inpNotes.placeholder = "اختياري";
+    inpNotes.style.maxWidth = "210px";
+    inpNotes.style.width = "100%";
+    inpNotes.style.textAlign = "center";
+    inpNotes.value = data.notes ?? "";
+    inpNotes.addEventListener("input", scheduleAutosave);
+    notesWrap.appendChild(inpNotes);
+    tdNotes.appendChild(notesWrap);
+
+    tr.append(tdPage, tdRecite, tdNear, tdFar, tdTas, tdNotes);
+    rowsEl.appendChild(tr);
+  }
+
+  function pagesForPart(partNum){
+    const r = PART_RANGES[String(partNum)];
+    const out = [];
+    for(let p=r.start; p<=r.end; p++) out.push(p);
+    return out;
+  }
+
+  function collectPart(partNum){
+    const pages = {};
+    [...rowsEl.querySelectorAll("tr")].forEach(tr=>{
+      const page = tr.dataset.page;
+      const circles = tr.querySelectorAll(".circles");
+      const tas = tr.querySelector("input.tasmee3Box")?.checked || false;
+      const notes = tr.querySelector("td:last-child input")?.value?.trim() || "";
+      pages[page] = {
+        recite: readCircles(circles[0]),
+        near: readCircles(circles[1]),
+        far: readCircles(circles[2]),
+        tasmee3: tas,
+        notes
+      };
+    });
+    return {
+      details: el("details").value.trim(),
+      partTasmee3: el("partTasmee3").checked,
+      partTest: el("partTest").checked,
+      pages,
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  function loadPartToUI(partNum, userDoc){
+    el("partTitle").textContent = "الجزء " + partNum;
+    const r = PART_RANGES[String(partNum)];
+    el("partSubtitle").textContent = `صفحات: ${r.start}–${r.end} (مصحف المدينة)`;
+
+    const part = userDoc.parts?.[String(partNum)] ?? {};
+    el("details").value = (part.details ?? part.note ?? "").toString();
+    el("partTasmee3").checked = !!(part.partTasmee3 ?? part.juzTasmee3 ?? false);
+    el("partTest").checked = !!(part.partTest ?? part.juzTest ?? part.mawaqi3Test ?? false);
+
+    lastSavedEl.textContent = "آخر تعديل: " + fmtDate(part.updatedAt);
+
+    rowsEl.innerHTML = "";
+    const pagesList = pagesForPart(partNum);
+    const savedPages = part.pages ?? part.pageData ?? {};
+    pagesList.forEach(p=> rowForPage(p, savedPages[String(p)] || {}));
+
+    el("details").addEventListener("input", scheduleAutosave);
+    el("partTasmee3").addEventListener("change", scheduleAutosave);
+    el("partTest").addEventListener("change", scheduleAutosave);
+  }
+
+  function calcPartProgress(partRaw, partNum){
+    const part = partRaw || {};
+    const r = PART_RANGES[String(partNum)];
+    const totalPages = (r.end - r.start + 1);
+
+    const pagesObj = part.pages ?? part.pageData ?? {};
+
+    //  نسبة الصفحات التي تم تسميعها (checkbox في عمود تسميع الصفحات)
+    let memDone = 0;
+    for(let p=r.start; p<=r.end; p++){
+      const raw = pagesObj[String(p)] || {};
+      const pg = normalizePage(raw);
+      if(pg.tasmee3) memDone++;
+    }
+    const حفظPct = totalPages ? Math.round((memDone/totalPages)*100) : 0;
+
+    // تثبيت: نسبة الدوائر/المتابعة لكل الصفحات (حتى لو صفحات غير موجودة بالداتا)
+    const perPageTotal = 10 + 6 + 4 + 1; // recite + near + far + tasmee3
+    const total = totalPages * perPageTotal;
+    let on = 0;
+    for(let p=r.start; p<=r.end; p++){
+      const raw = pagesObj[String(p)] || {};
+      const pg = normalizePage(raw);
+      on += pg.recite.filter(Boolean).length;
+      on += pg.near.filter(Boolean).length;
+      on += pg.far.filter(Boolean).length;
+      on += pg.tasmee3 ? 1 : 0;
+    }
+    const تثبيتPct = total ? Math.round((on/total)*100) : 0;
+
+    const started = (on > 0);
+    const done = (حفظPct === 100) && !!(part.partTasmee3 ?? part.juzTasmee3) && !!(part.partTest ?? part.juzTest ?? part.mawaqi3Test);
+    return {started, done, حفظPct, تثبيتPct};
+  }
+
+  // ===== Color state mapping for parts (v24_40) =====
+function __applyPartStateClass(btn, pr){
+  const mem = Number(pr?.حفظPct ?? 0) || 0;
+  const fix = Number(pr?.تثبيتPct ?? 0) || 0;
+
+  // reset
+  btn.classList.remove("partInProgress","partMemDone","partFixDone");
+
+  // logic:
+  // green: mem==100 and fix==100
+  if (mem >= 100 && fix >= 100){
+    btn.classList.add("partFixDone");
+    return;
+  }
+  // orange: mem==100 and fix<100
+  if (mem >= 100){
+    btn.classList.add("partMemDone");
+    return;
+  }
+  // pink: started but not completed (either mem>0 or fix>0)
+  if (mem > 0 || fix > 0){
+    btn.classList.add("partInProgress");
+    return;
+  }
+  // default: leave as-is (not started)
+}
+
+function buildPartsGrid(userDoc){
+    partsGridEl.innerHTML = "";
+    for(let p=1;p<=30;p++){
+      const btn = document.createElement("button");
+      btn.type="button";
+      btn.className="partBtn";
+      const part = userDoc.parts?.[String(p)];
+      const pr = calcPartProgress(part, p);
+
+      
+      __applyPartStateClass(btn, pr);
+const r = PART_RANGES[String(p)];
+
+      let tagText = "";
+      if(pr.done){
+        tagText = `مكتمل ✅<br>تثبيت: ${pr.تثبيتPct}%`;
+      }
+    else{
+        tagText = ` ${pr.حفظPct}%<br>تثبيت: ${pr.تثبيتPct}%`;
+      }
+
+      btn.innerHTML = `<div class="partNum">الجزء ${p}</div>
+                       <div class="partMeta">صفحات ${r.start}–${r.end}</div>
+                       <div class="tag">${tagText}</div>`;
+      btn.addEventListener("click", ()=> openPart(p));
+      partsGridEl.appendChild(btn);
+    }
+  }
+
+  function friendlyAuthError(code){
+    const map = {
+      "auth/invalid-email":"الإيميل غير صحيح.",
+      "auth/user-not-found":"ما في حساب بهذا الإيميل. جرّبي إنشاء حساب.",
+      "auth/wrong-password":"كلمة المرور غير صحيحة.",
+      "auth/email-already-in-use":"الإيميل مستخدم مسبقًا. جرّبي دخول.",
+      "auth/weak-password":"كلمة المرور ضعيفة (6 أحرف على الأقل).",
+      "auth/popup-closed-by-user":"تم إغلاق نافذة Google قبل إتمام الدخول.",
+      "auth/operation-not-allowed":"فعّلي Google و Email/Password من Firebase Authentication.",
+    };
+    return map[code] || "حصل خطأ. جرّبي مرة أخرى.";
+  }
+
+  // Firebase init
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+// Persist login across refresh
+setPersistence(auth, browserLocalPersistence).catch((e)=>{ console.error('persistence error', e); });
+  const db = getFirestore(app);
+
+// ===== Groups (v1) =====
+const invitesListEl = el("invitesList");
+const invitesEmptyEl = el("invitesEmpty");
+const myGroupsListEl = el("myGroupsList");
+const myGroupsEmptyEl = el("myGroupsEmpty");
+
+const groupNameEl = el("groupName");
+const groupNEl = el("groupN");
+const createGroupBtn = el("createGroupBtn");
+const backToGroupsBtn = el("backToGroups");
+const createdGroupBoxEl = el("createdGroupBox");
+const createdGroupMetaEl = el("createdGroupMeta");
+const inviteEmailEl = el("inviteEmail");
+const sendInviteBtn = el("sendInviteBtn");
+const sentInvitesListEl = el("sentInvitesList");
+const sentInvitesEmptyEl = el("sentInvitesEmpty");
+
+// Group page
+const groupTitleEl = el("groupTitle");
+const groupSubEl = el("groupSub");
+const backToGroupsFromGroupBtn = el("backToGroupsFromGroup");
+const refreshGroupBtn = el("refreshGroup");
+
+const pickPartsPanelEl = el("pickPartsPanel");
+const myPartsSummaryTextEl = el("myPartsSummaryText");
+const editMyPartsBtn = el("editMyPartsBtn");
+
+// parts modal elements
+const partsOverlayEl = el("partsOverlay");
+const partsPickerGridModalEl = el("partsPickerGridModal");
+const partsPickerCountModalEl = el("partsPickerCountModal");
+const partsModalHintEl = el("partsModalHint");
+const partsModalCloseBtn = el("partsModalClose");
+const partsModalCancelBtn = el("partsModalCancel");
+const partsModalSaveBtn = el("partsModalSave");
+
+// member parts overlay
+const memberPartsOverlayEl = el("memberPartsOverlay");
+const memberPartsTitleEl = el("memberPartsTitle");
+const memberPartsSubtitleEl = el("memberPartsSubtitle");
+const memberPartsBodyEl = el("memberPartsBody");
+const memberPartsCloseBtn = el("memberPartsClose");
+const memberPartsOkBtn = el("memberPartsOk");
+
+const pickPartsHintEl = el("pickPartsHint");
+const partsPickerGridEl = el("partsPickerGrid");
+const partsPickerCountEl = el("partsPickerCount");
+const savePickedPartsBtn = el("savePickedParts");
+
+const groupInviteEmailEl = el("groupInviteEmail");
+const groupSendInviteBtn = el("groupSendInvite");
+const groupInvitesListEl = el("groupInvitesList");
+const groupInvitesEmptyEl = el("groupInvitesEmpty");
+
+const groupMembersListEl = el("groupMembersList");
+const groupMembersEmptyEl = el("groupMembersEmpty");
+
+let activeGroupId = null;
+let activeGroupGoalN = null;
+let activeGroupName = null;
+let pickedParts = [];
+const refreshGroupsBtn = el("refreshGroups");
+
+// realtime listener for members
+let membersUnsub = null;
+
+let currentUser = null;
+      window.currentUser = null;
+let pendingGroupsLoad = false; // if user clicks Groups before auth is ready
+
+let currentUserEmail = null;
+let createdGroupId = null;
+
+const fmtTime = (ts)=>{
+  try{
+    const d = ts?.toDate ? ts.toDate() : (ts instanceof Date ? ts : null);
+    if(!d) return "";
+    return d.toLocaleString("ar", { hour12:true });
+  }catch(e){ return ""; }
+};
+
+function itemRow({title, sub, right}){
+  const wrap = document.createElement("div");
+  wrap.className = "item";
+  const meta = document.createElement("div");
+  meta.className = "meta";
+  const t = document.createElement("div");
+  t.className = "title";
+  t.textContent = title;
+  const s = document.createElement("div");
+  s.className = "sub";
+  s.textContent = sub || "";
+  meta.appendChild(t); meta.appendChild(s);
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  if(right) actions.appendChild(right);
+  wrap.appendChild(meta);
+  wrap.appendChild(actions);
+  return wrap;
+}
+
+function makeProgressRing(pct){
+  const ring = document.createElement("div");
+  ring.className = "progRing";
+  const val = (pct===null || pct===undefined || Number.isNaN(Number(pct))) ? null : Math.max(0, Math.min(100, Math.round(Number(pct))));
+  if(val === null){
+    ring.classList.add("empty");
+    ring.style.setProperty("--p", 0);
+    ring.innerHTML = "<span>—</span>";
+    ring.title = "لا يوجد ملخّص حفظ بعد";
+  }else{
+    ring.style.setProperty("--p", val);
+    ring.innerHTML = `<span>${val}%</span>`;
+    ring.title = `نسبة  ${val}%`;
+  }
+  return ring;
+}
+
+
+async function loadMyGroups(){
+  if(!currentUser){
+    myGroupsListEl.innerHTML = "";
+    myGroupsEmptyEl.style.display = "block";
+    return;
+  }
+  myGroupsListEl.innerHTML = "";
+  myGroupsEmptyEl.style.display = "none";
+
+  let groups = [];
+  try{
+    const snap = await getDocs(collection(db, "userGroups", currentUser.uid, "groups"));
+    console.log("[myGroups] uid:", currentUser.uid, "userGroups count:", snap.size);
+    if(snap.size===0){ toast("تنبيه", "لا توجد مجموعات محفوظة تحت حسابك بعد الريفريش. تأكدي أن المجموعات موجودة في Firestore تحت userGroups/UID/groups."); }
+
+    snap.forEach(d=>{ console.log("[myGroups] doc", d.id, d.data()); groups.push({ id: d.id, ...d.data() }); });
+  }catch(e){
+    console.error(e);
+    toast("خطأ", e?.code ? `تعذر تحميل مجموعاتي: ${e.code}` : "تعذر تحميل مجموعاتي.");
+  }
+
+  // Fallback: groups I created (حتى لو userGroups ما رجعت لأي سبب)
+  if(groups.length === 0){
+    try{
+      const qOwn = query(collection(db, "groups"), where("createdByUid","==", currentUser.uid));
+      const snap2 = await getDocs(qOwn);
+      snap2.forEach(d=>{
+        const g = d.data() || {};
+        groups.push({
+          id: d.id,
+          groupId: d.id,
+          name: g.name,
+          goalType: g.goalType,
+          goalN: g.goalN,
+          joinedAt: g.createdAt
+        });
+      });
+    }catch(e){
+      console.error(e);
+    }
+  }
+
+  if(groups.length === 0){
+    myGroupsEmptyEl.style.display = "block";
+    return;
+  }
+
+  // Sort newest first by joinedAt/createdAt
+  groups.sort((a,b)=>{
+    const ta = a.joinedAt?.seconds || 0;
+    const tb = b.joinedAt?.seconds || 0;
+    return tb - ta;
+  });
+
+  groups.forEach(g=>{
+    const btn = document.createElement("button");
+    btn.className = "miniBtn";
+    btn.textContent = "فتح";
+    const gid = g.groupId || g.id;
+    btn.onclick = ()=>openGroupPage(gid);
+    const row = itemRow({
+      title: g.name || "مجموعة",
+      sub: `الهدف: ${g.goalN || "?"} أجزاء`,
+      right: btn
+    });
+    myGroupsListEl.appendChild(row);
+  });
+}
+
+function openGroupsTab(){ setDashView("groups"); }
+
+
+async function openGroupPage(groupId){
+  activeGroupId = groupId;
+  localStorage.setItem("activeGroupId", groupId);
+  __setActiveView("group");
+  await loadGroupPage();
+}
+
+function renderPartsPickerInto(gridEl, countEl){
+  if(!gridEl) return;
+  gridEl.innerHTML = "";
+  const total = 30;
+  for(let p=1; p<=total; p++){
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "partBtn" + (pickedParts.includes(p) ? " active" : "");
+    b.textContent = String(p);
+    b.onclick = ()=>{
+      if(pickedParts.includes(p)){
+        pickedParts = pickedParts.filter(x=>x!==p);
+      }else{
+        if(activeGroupGoalN && pickedParts.length >= activeGroupGoalN){
+          toast("تنبيه", `اختاري بالضبط ${activeGroupGoalN} أجزاء فقط.`);
+          return;
+        }
+        pickedParts = [...pickedParts, p].sort((a,b)=>a-b);
+      }
+      renderPartsPickerInto(gridEl, countEl);
+      updatePartsPickerCountInto(countEl);
+    };
+    gridEl.appendChild(b);
+  }
+}
+
+function renderPartsPicker(){
+  // legacy (hidden panel) - keep for compatibility
+  renderPartsPickerInto(partsPickerGridEl, partsPickerCountEl);
+}
+
+function updatePartsPickerCountInto(countEl){
+  const n = activeGroupGoalN || 0;
+  if(countEl) countEl.textContent = `${pickedParts.length} / ${n}`;
+}
+
+function updatePartsPickerCount(){
+  updatePartsPickerCountInto(partsPickerCountEl);
+}
+
+async function loadGroupInvites(){
+  groupInvitesListEl.innerHTML = "";
+  groupInvitesEmptyEl.style.display = "none";
+
+  const qInv = query(
+    collection(db, "groupInvites"),
+    where("groupId","==", activeGroupId)
+  );
+  const snap = await getDocs(qInv);
+
+  if(snap.empty){
+    groupInvitesEmptyEl.style.display = "block";
+    return;
+  }
+
+  const rows = [];
+  snap.forEach(d=>{
+    const inv = d.data();
+    const t = inv?.createdAt?.seconds ? inv.createdAt.seconds : 0;
+    rows.push({ inv, t });
+  });
+  rows.sort((a,b)=> b.t - a.t);
+
+  rows.forEach(({inv})=>{
+    const st = inv.status==="pending" ? "بانتظار القبول" : (inv.status==="accepted" ? "تم القبول" : (inv.status==="declined" ? "تم الرفض" : inv.status));
+    const row = itemRow({
+      title: inv.invitedEmail,
+      sub: `${st} • ${fmtTime(inv.createdAt)}`,
+      right: null
+    });
+    groupInvitesListEl.appendChild(row);
+  });
+}
+
+async function sendGroupInvite(){
+  const email = (groupInviteEmailEl.value || "").trim();
+  if(!email || !email.includes("@")){ toast("تنبيه","اكتبي إيميل صحيح."); return; }
+  groupSendInviteBtn.disabled = true;
+  try{
+    await addDoc(collection(db, "groupInvites"), {
+      groupId: activeGroupId,
+      groupName: activeGroupName || "مجموعة",
+      invitedEmail: email,
+      invitedByUid: currentUser.uid,
+      invitedByEmail: currentUserEmail,
+      status: "pending",
+      createdAt: serverTimestamp()
+    });
+    groupInviteEmailEl.value = "";
+    toast("تم","تم إرسال الدعوة ✅");
+    await loadGroupInvites();
+  }catch(e){
+    console.error(e);
+    toast("خطأ", e?.code ? `تعذر إرسال الدعوة: ${e.code}` : "تعذر إرسال الدعوة.");
+  }finally{
+    groupSendInviteBtn.disabled = false;
+  }
+}
+
+function listenToGroupMembers(groupId){
+  // Stop previous listener (if any)
+  try{ if(membersUnsub) membersUnsub(); }catch(e){}
+  membersUnsub = null;
+
+  groupMembersListEl.innerHTML = "";
+  groupMembersEmptyEl.style.display = "none";
+
+  if(!groupId){
+    groupMembersEmptyEl.style.display = "block";
+    groupMembersEmptyEl.textContent = "لا يوجد أعضاء بعد.";
+    return;
+  }
+
+  const qMem = query(collection(db, "groups", groupId, "members"), orderBy("joinedAt","asc"));
+  membersUnsub = onSnapshot(qMem, (snap)=>{
+    groupMembersListEl.innerHTML = "";
+    groupMembersEmptyEl.style.display = "none";
+
+    if(snap.empty){
+      groupMembersEmptyEl.style.display = "block";
+      return;
+    }
+
+    
+const members=[];
+    snap.forEach(d=>{
+      const m=d.data()||{};
+      const ps = m.progressSummary || null;
+      const memPct = (ps && typeof ps.avgMem !== "undefined") ? Number(ps.avgMem) : null;
+
+      members.push({
+        uid:d.id,
+        name:(m.displayName||"").trim() || (m.email? m.email.split("@")[0] : "عضوة"),
+        parts: Array.isArray(m.selectedParts)? m.selectedParts : [],
+        memPct: (Number.isFinite(memPct) ? memPct : null)
+      });
+    });
+
+    // Sort by memorization progress (avgMem) descending, then by name
+    members.sort((a,b)=>{
+      const ap = (a.memPct===null ? -1 : a.memPct);
+      const bp = (b.memPct===null ? -1 : b.memPct);
+      if(bp !== ap) return bp - ap;
+      return a.name.localeCompare(b.name,"ar");
+    });
+
+    members.forEach((m, idx) => {
+      let subTxt = m.parts.length ? `الأجزاء: ${m.parts.join("، ")}` : "لم تختَر أجزاء بعد";
+      const ring = makeProgressRing(m.memPct);
+      const row = itemRow({ title: m.name + (m.uid===currentUser?.uid ? " (أنتِ)" : ""), sub: subTxt, right: ring });
+
+const titleEl = row.querySelector(".title");
+if(titleEl){
+  titleEl.classList.add("titleFlex");
+  const rb = document.createElement("div");
+  rb.className = "rankBadge";
+  rb.textContent = String(idx + 1);
+  titleEl.prepend(rb);
+}
+      row.style.cursor = "pointer";
+      row.addEventListener("click", ()=>{
+        showMemberParts(m.name + (m.uid===currentUser?.uid ? " (أنتِ)" : ""), m.parts, m.uid);
+      });
+      groupMembersListEl.appendChild(row);
+    });
+  }, (err)=>{
+    console.error(err);
+    groupMembersEmptyEl.style.display = "block";
+    toast("خطأ", err?.code ? `تعذر تحميل العضوات: ${err.code}` : "تعذر تحميل العضوات.");
+  });
+}
+
+async function loadGroupPage(){
+  if(!activeGroupId) return;
+
+  const gSnap = await getDoc(doc(db,"groups",activeGroupId));
+  if(!gSnap.exists()){
+    toast("خطأ","المجموعة غير موجودة.");
+    __setActiveView("groups");
+    return;
+  }
+  const g=gSnap.data();
+  activeGroupGoalN = Number(g.goalN || 0) || 0;
+  activeGroupName = g.name || "مجموعة";
+  groupTitleEl.textContent = activeGroupName;
+  groupSubEl.textContent = `الهدف: ${activeGroupGoalN} أجزاء`;
+
+  // load my selected parts
+  const myMemSnap = await getDoc(doc(db,"groups",activeGroupId,"members",currentUser.uid));
+  const myMem = myMemSnap.exists() ? myMemSnap.data() : {};
+  pickedParts = Array.isArray(myMem.selectedParts) ? myMem.selectedParts.slice().sort((a,b)=>a-b) : [];
+  pickPartsHintEl.textContent = `اختاري بالضبط ${activeGroupGoalN} أجزاء لهدفك في هذه المجموعة.`;
+  updateMyPartsSummary();
+  // (legacy hidden panel)
+  renderPartsPicker();
+  updatePartsPickerCount();
+  // also prep modal count
+  updatePartsPickerCountInto(partsPickerCountModalEl);
+
+  await loadGroupInvites();
+  listenToGroupMembers(activeGroupId);
+}
+
+async function savePickedParts(btnEl){
+  if(!activeGroupId) return;
+  if(pickedParts.length !== activeGroupGoalN){
+    toast("تنبيه", `لازم تختاري بالضبط ${activeGroupGoalN} أجزاء.`);
+    return;
+  }
+  const b = btnEl || savePickedPartsBtn;
+  if(b) b.disabled = true;
+  try{
+    // setDoc with merge so first-time save works too
+    await setDoc(doc(db,"groups",activeGroupId,"members",currentUser.uid), {
+      selectedParts: pickedParts,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    toast("تم","تم حفظ الأجزاء ✅");
+    updateMyPartsSummary();
+    // update my published progress for this group (in case parts changed)
+    try{ const myDoc = (cachedDoc ?? await loadUserDoc()); await syncMyProgressToGroup(activeGroupId, myDoc); }catch(e){}
+  }catch(e){
+    console.error(e);
+    toast("خطأ", e?.code ? `تعذر  ${e.code}` : "تعذر حفظ الأجزاء.");
+  }finally{
+    if(b) b.disabled = false;
+  }
+}
+
+function openPartsModal(){
+  if(!activeGroupId || !currentUser) return;
+  partsModalHintEl.textContent = `اختاري بالضبط ${activeGroupGoalN} أجزاء.`;
+  updatePartsPickerCountInto(partsPickerCountModalEl);
+  renderPartsPickerInto(partsPickerGridModalEl, partsPickerCountModalEl);
+  partsOverlayEl.classList.remove("hide");
+}
+
+function closePartsModal(){
+  partsOverlayEl.classList.add("hide");
+}
+
+let _memberPreviewToken = 0;
+function escHtml(s){
+  return String(s ?? "").replace(/[&<>"']/g, (c)=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+  }[c]));
+}
+
+
+/* ========= Member progress sync (safe) =========
+   We cannot read other users' quranTrackers due to privacy rules.
+   So each member writes a *summary* of her progress into:
+   groups/{groupId}/members/{uid}
+   which is readable to signed-in users (group members), while write is self-only.
+*/
+function buildProgressFromTracker(userDoc, selectedParts){
+  const p = Array.isArray(selectedParts) ? selectedParts.slice().sort((a,b)=>a-b) : [];
+  const perPart = {};
+  if(!p.length) return { summary:null, perPart:{} };
+
+  let doneCount = 0;
+  let avgMem = 0;
+  let avgFix = 0;
+
+  for(const partNum of p){
+    const raw = userDoc?.parts?.[String(partNum)];
+    const pr = calcPartProgress(raw, partNum);
+    if(pr.done) doneCount++;
+    avgMem += pr.حفظPct;
+    avgFix += pr.تثبيتPct;
+    perPart[String(partNum)] = { memPct: pr.حفظPct, fixPct: pr.تثبيتPct, done: !!pr.done };
+  }
+
+  avgMem = Math.round(avgMem / p.length);
+  avgFix = Math.round(avgFix / p.length);
+  const pct = Math.round((doneCount / p.length) * 100);
+
+  const summary = {
+    total: p.length,
+    done: doneCount,
+    pct,
+    avgMem,
+    avgFix
+  };
+  return { summary, perPart };
+}
+
+async function syncMyProgressToGroup(groupId, userDoc){
+  try{
+    if(!groupId || !currentUser?.uid) return;
+    // Read my selected parts in this group
+    const memRef = doc(db, "groups", groupId, "members", currentUser.uid);
+    const memSnap = await getDoc(memRef);
+    const mem = memSnap.exists() ? (memSnap.data()||{}) : {};
+    const selected = Array.isArray(mem.selectedParts) ? mem.selectedParts : [];
+
+    const { summary, perPart } = buildProgressFromTracker(userDoc, selected);
+
+    await setDoc(memRef, {
+      progressSummary: summary,       // {total, done, pct, avgMem, avgFix} or null
+      partProgress: perPart,          // {"1":{memPct,fixPct,done}, ...}
+      progressUpdatedAt: serverTimestamp()
+    }, { merge:true });
+  }catch(e){
+    console.warn("[syncMyProgressToGroup] failed", groupId, e);
+  }
+}
+
+async function syncMyProgressToAllGroups(userDoc){
+  try{
+    if(!currentUser?.uid) return;
+    const snap = await getDocs(collection(db, "userGroups", currentUser.uid, "groups"));
+    const gids = [];
+    snap.forEach(d=>{
+      const data=d.data()||{};
+      gids.push(data.groupId || d.id);
+    });
+    // sequential (avoid rate limits)
+    for(const gid of gids){
+      await syncMyProgressToGroup(gid, userDoc);
+    }
+  }catch(e){
+    console.warn("[syncMyProgressToAllGroups] failed", e);
+  }
+}
+
+let _progressSyncTimer = null;
+function scheduleProgressSync(userDoc){
+  try{
+    if(_progressSyncTimer) clearTimeout(_progressSyncTimer);
+    _progressSyncTimer = setTimeout(()=>syncMyProgressToAllGroups(userDoc), 1200);
+  }catch(e){}
+}
+/* ========= end member progress sync ========= */
+
+async function showMemberParts(name, parts, memberUid){
+  const token = ++_memberPreviewToken;
+  const p = Array.isArray(parts) ? parts.slice().sort((a,b)=>a-b) : [];
+
+  memberPartsTitleEl.textContent = `تقدّم ${name}`;
+  memberPartsSubtitleEl.textContent = p.length ? `الأجزاء المختارة: ${p.length}` : "لم تختر أجزاء بعد";
+  memberPartsBodyEl.innerHTML = "<div class='muted'>... جاري التحميل</div>";
+  memberPartsOverlayEl.classList.remove("hide");
+
+  // If no parts, nothing else to compute
+  if(!p.length){
+    if(token !== _memberPreviewToken) return;
+    memberPartsBodyEl.innerHTML = "<div class='muted' style='font-size:14px;line-height:1.8'>لا يوجد اختيارات حتى الآن.</div>";
+    return;
+  }
+
+  
+// Read member public progress summary from:
+// groups/{groupId}/members/{uid}  (safe to read for signed-in users)
+let memberMem = null;
+try{
+  if(activeGroupId && memberUid){
+    const snap = await getDoc(doc(db, "groups", activeGroupId, "members", memberUid));
+    if(snap.exists()) memberMem = snap.data();
+  }
+}catch(e){
+  console.warn("[memberProgress] cannot read member summary for", memberUid, e);
+  memberMem = null;
+}
+
+if(token !== _memberPreviewToken) return;
+
+// Build UI
+const header = document.createElement("div");
+header.style.marginBottom = "12px";
+
+const sum = memberMem?.progressSummary || null;
+const per = memberMem?.partProgress || null;
+
+if(!sum || !per){
+  // Fallback: show parts only (still useful)
+  header.innerHTML = `<div class='tag' style='text-align:right'>الأجزاء: ${escHtml(p.join("، "))}</div>`;
+  memberPartsBodyEl.innerHTML = "";
+  memberPartsBodyEl.appendChild(header);
+  memberPartsBodyEl.insertAdjacentHTML("beforeend",
+    `<div class='muted' style='margin-top:10px;line-height:1.8'>ملاحظة: لم يتم نشر ملخّص التقدّم لهذه العضوة بعد. يظهر تلقائيًا بعد قبولها الدعوة للمجموعة أو بعد حفظ اختيار الأجزاء.</div>`
+  );
+  return;
+}
+
+
+// Use the published summary (no need to read private quranTrackers)
+const doneCount = Number(sum.done || 0);
+const avgMem = Number(sum.avgMem || 0);
+const avgFix = Number(sum.avgFix || 0);
+const pct = Number(sum.pct || 0);
+
+const rows = [];
+for(const partNum of p){
+  const pp = per[String(partNum)] || {};
+  const pr = { حفظPct: Number(pp.memPct||0), تثبيتPct: Number(pp.fixPct||0), done: !!pp.done };
+  rows.push({ partNum, pr });
+}
+
+header.innerHTML = `
+  <div class='row' style='margin-top:0'>
+    <div class='tag' style='text-align:right'>مكتمل: ${doneCount} / ${p.length} (${pct}%)</div>
+    <div class='tag' style='text-align:right'>متوسط  ${avgMem}% • متوسط التثبيت: ${avgFix}%</div>
+  </div>
+`;
+
+const list = document.createElement("div");
+  list.style.display = "grid";
+  list.style.gap = "10px";
+
+  rows.forEach(({partNum, pr})=>{
+    const r = PART_RANGES[String(partNum)];
+    const box = document.createElement("div");
+    box.className = "panel";
+    box.style.padding = "12px";
+    box.innerHTML = `
+      <div style='display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap'>
+        <div style='font-weight:900'>الجزء ${partNum}</div>
+        <div class='tag'>صفحات ${r.start}–${r.end}</div>
+      </div>
+      <div class='muted' style='margin-top:6px'> <b>${pr.حفظPct}%</b> • تثبيت: <b>${pr.تثبيتPct}%</b> ${pr.done ? "• <b>مكتمل ✅</b>" : ""}</div>
+    `;
+    list.appendChild(box);
+  });
+
+  memberPartsBodyEl.innerHTML = "";
+  memberPartsBodyEl.appendChild(header);
+  memberPartsBodyEl.appendChild(list);
+}
+function closeMemberParts(){
+  memberPartsOverlayEl.classList.add("hide");
+}
+
+function updateMyPartsSummary(){
+  if(!myPartsSummaryTextEl) return;
+  const p = Array.isArray(pickedParts) ? pickedParts : [];
+  myPartsSummaryTextEl.textContent = p.length ? `الأجزاء المختارة: ${p.join("، ")}` : "لم تختر أجزاء بعد.";
+}
+
+
+
+
+async function loadMyInvites(){
+  if(!currentUserEmail) return;
+  invitesListEl.innerHTML = "";
+  invitesEmptyEl.style.display = "none";
+
+  const q = query(
+    collection(db, "groupInvites"),
+    where("invitedEmail", "==", currentUserEmail),
+    where("status", "==", "pending")
+  );
+  const snap = await getDocs(q);
+
+  if(snap.empty){
+    invitesEmptyEl.style.display = "block";
+    return;
+  }
+
+  const rows=[];
+  snap.forEach(d=>{
+    const inv=d.data();
+    const t=inv?.createdAt?.seconds ? inv.createdAt.seconds : 0;
+    rows.push({id:d.id, inv, t});
+  });
+  rows.sort((a,b)=>b.t-a.t);
+
+  rows.forEach(({id, inv})=>{
+    const accept = document.createElement("button");
+    accept.className = "miniBtn";
+    accept.textContent = "قبول";
+    accept.onclick = ()=>respondInvite(id, "accepted", inv);
+
+    const decline = document.createElement("button");
+    decline.className = "miniBtn";
+    decline.textContent = "رفض";
+    decline.onclick = ()=>respondInvite(id, "declined", inv);
+
+    const actions = document.createElement("div");
+    actions.className = "actions";
+    actions.appendChild(accept);
+    actions.appendChild(decline);
+
+    const row = itemRow({
+      title: inv.groupName || "دعوة مجموعة",
+      sub: `من: ${inv.invitedByEmail || ""} • ${fmtTime(inv.createdAt)}`,
+      right: actions
+    });
+    invitesListEl.appendChild(row);
+  });
+}
+
+// ===== Invite actions (accept/decline) =====
+// When a member accepts an invite, she already agreed that group-related data
+// (selected parts + progress summary) are visible to the group.
+// So we:
+// 1) mark the invite status
+// 2) create membership doc + userGroups link
+// 3) publish progress summary for that group immediately (safe: reads only her own tracker)
+async function respondInvite(inviteId, newStatus, inv){
+  try{
+    if(!inviteId) return;
+
+    // 1) update invite status
+    await updateDoc(doc(db, "groupInvites", inviteId), {
+      status: newStatus,
+      respondedAt: serverTimestamp(),
+      respondedByUid: currentUser?.uid || null,
+      respondedByEmail: currentUserEmail || null
+    });
+
+    // 2) if accepted, add membership + userGroups
+    if(newStatus === "accepted"){
+      const groupId = inv?.groupId;
+      if(!groupId){
+        toast("خطأ","الدعوة غير صالحة (groupId مفقود). ");
+      }else{
+        // read group meta (goal/name) once
+        const gSnap = await getDoc(doc(db, "groups", groupId));
+        const g = gSnap.exists() ? (gSnap.data()||{}) : {};
+
+        const batch = writeBatch(db);
+        batch.set(doc(db, "groups", groupId, "members", currentUser.uid), {
+          uid: currentUser.uid,
+          email: currentUserEmail,
+          displayName: currentUser.displayName || "",
+          role: "member",
+          joinedAt: serverTimestamp()
+        }, { merge:true });
+
+        batch.set(doc(db, "userGroups", currentUser.uid, "groups", groupId), {
+          groupId,
+          name: g.name || inv?.groupName || "مجموعة",
+          goalType: g.goalType || "juz_count",
+          goalN: Number(g.goalN || 0) || 0,
+          role: "member",
+          joinedAt: serverTimestamp()
+        }, { merge:true });
+
+        await batch.commit();
+
+        // 3) publish progress summary now (so others don't see the warning)
+        try{
+          const myDoc = (cachedDoc ?? await loadUserDoc());
+          await syncMyProgressToGroup(groupId, myDoc);
+        }catch(e){ /* silent */ }
+
+        toast("تم", "تم قبول الدعوة ✅");
+      }
+    }else{
+      toast("تم", newStatus === "declined" ? "تم رفض الدعوة." : "تم تحديث الدعوة.");
+    }
+
+    // refresh lists
+    await loadMyInvites();
+    await loadMyGroups();
+
+  }catch(e){
+    console.error(e);
+    toast("خطأ", e?.code ? `تعذر تنفيذ العملية: ${e.code}` : "تعذر تنفيذ العملية.");
+  }
+}
+
+async function createGroup(){
+  const name = (groupNameEl.value || "").trim();
+  const n = Number(groupNEl.value || 0);
+
+  if(!currentUser){ toast("تنبيه", "سجّلي دخول أولاً."); return; }
+  if(!name){ toast("تنبيه", "اكتبي اسم المجموعة."); return; }
+  if(!n || n<1 || n>30){ toast("تنبيه", "اختاري عدد أجزاء صحيح (1–30)."); return; }
+
+  createGroupBtn.disabled = true;
+  try{
+    // Create id first so we can write multiple docs atomically
+    const gRef = doc(collection(db, "groups"));
+    const groupId = gRef.id;
+
+    const batch = writeBatch(db);
+
+    // 1) group doc
+    batch.set(gRef, {
+      name,
+      goalType: "juz_count",
+      goalN: n,
+      createdByUid: currentUser.uid,
+      createdByEmail: currentUserEmail,
+      createdAt: serverTimestamp()
+    });
+
+    // 2) membership doc
+    batch.set(doc(db, "groups", groupId, "members", currentUser.uid), {
+      uid: currentUser.uid,
+      email: currentUserEmail,
+      displayName: currentUser.displayName || "",
+      role: "owner",
+      joinedAt: serverTimestamp(),
+      selectedParts: []
+    }, { merge:true });
+
+    // 3) userGroups link (THIS is what makes it persist in "مجموعاتي")
+    batch.set(doc(db, "userGroups", currentUser.uid, "groups", groupId), {
+      groupId,
+      name,
+      goalType: "juz_count",
+      goalN: n,
+      role: "owner",
+      joinedAt: serverTimestamp()
+    }, { merge:true });
+
+    await batch.commit();
+
+    createdGroupMetaEl.textContent = `الهدف: ${n} أجزاء • يمكنك الآن إرسال دعوات بالإيميل.`;
+    createdGroupBoxEl.style.display = "block";
+    toast("تم", "تم إنشاء المجموعة ✅");
+
+    // refresh lists
+    await loadMyGroups();
+
+    // optional: if group page exists in this build, open it
+    try{ if(typeof openGroupPage==="function") await openGroupPage(groupId); }catch(e){ console.error(e); }
+
+  }catch(e){
+    console.error(e);
+    toast("خطأ", e?.code ? `تعذر إنشاء المجموعة: ${e.code}` : "تعذر إنشاء المجموعة.");
+  }finally{
+    createGroupBtn.disabled = false;
+  }
+}
+
+async function loadSentInvites(){
+  if(!createdGroupId) return;
+  sentInvitesListEl.innerHTML = "";
+  sentInvitesEmptyEl.style.display = "none";
+
+  const q = query(
+    collection(db, "groupInvites"),
+    where("groupId", "==", createdGroupId)
+  );
+  const snap = await getDocs(q);
+
+  if(snap.empty){
+    sentInvitesEmptyEl.style.display = "block";
+    return;
+  }
+
+  const rows=[];
+  snap.forEach(d=>{
+    const inv=d.data();
+    const t=inv?.createdAt?.seconds ? inv.createdAt.seconds : 0;
+    rows.push({inv,t});
+  });
+  rows.sort((a,b)=>b.t-a.t);
+
+  rows.forEach(({inv})=>{
+    const st = inv.status === "pending" ? "بانتظار القبول" : (inv.status==="accepted" ? "تم القبول" : (inv.status==="declined" ? "تم الرفض" : inv.status));
+    const row = itemRow({
+      title: inv.invitedEmail,
+      sub: `${st} • ${fmtTime(inv.createdAt)}`,
+      right: null
+    });
+    sentInvitesListEl.appendChild(row);
+  });
+}
+
+async function sendInvite(){
+  if(!createdGroupId){ toast("تنبيه", "أنشئي مجموعة أولاً."); return; }
+  const email = (inviteEmailEl.value || "").trim();
+  if(!email || !email.includes("@")){ toast("تنبيه", "اكتبي إيميل صحيح."); return; }
+  if(!currentUser){ toast("تنبيه", "سجّلي دخول أولاً."); return; }
+
+  sendInviteBtn.disabled = true;
+  try{
+    // Read group name for nicer invite
+    const gSnap = await getDoc(doc(db, "groups", createdGroupId));
+    const g = gSnap.exists() ? gSnap.data() : { name: "مجموعة" };
+
+    await addDoc(collection(db, "groupInvites"), {
+      groupId: createdGroupId,
+      groupName: g.name || "مجموعة",
+      invitedEmail: email,
+      invitedByUid: currentUser.uid,
+      invitedByEmail: currentUserEmail,
+      status: "pending",
+      createdAt: serverTimestamp()
+    });
+
+    inviteEmailEl.value = "";
+    toast("تم", "تم إرسال الدعوة ✅");
+    await loadSentInvites();
+  }catch(e){
+    console.error(e);
+    toast("خطأ", "تعذر إرسال الدعوة.");
+  }finally{
+    sendInviteBtn.disabled = false;
+  }
+}
+
+  let uid = null;
+  let currentPart = null;
+  let cachedDoc = null;
+
+  async function loadUserDoc(){
+    const ref = doc(db, "quranTrackers", uid);
+    const snap = await getDoc(ref);
+    if(snap.exists()) return snap.data();
+    return { profile:{}, parts:{} };
+  }
+  async function saveUserDoc(userDoc){
+    const ref = doc(db, "quranTrackers", uid);
+    await setDoc(ref, userDoc, { merge:true });
+  }
+
+  function setGreeting(userDoc){
+    const name = userDoc.profile?.name?.trim();
+    greetEl.textContent = name ? ("") : "";
+    globalLastEl.textContent = userDoc.updatedAt ? ("آخر تعديل: " + fmtDate(userDoc.updatedAt)) : "";
+  }
+
+  function maybeHelloToast(userDoc){ return; }
+
+  // Name modal
+  function showNameModal(show){
+    el("nameOverlay").classList.toggle("hide", !show);
+    el("displayName").value = "";
+    el("nameStatus").textContent = show ? "اكتبي اسمك للترحيب 🌸" : "✨";
+  }
+
+  el("saveNameBtn").addEventListener("click", async ()=>{
+    const nm = el("displayName").value.trim();
+    if(!nm){ el("nameStatus").textContent = "اكتبي اسمًا أولاً."; return; }
+    try{
+      const userDoc = (cachedDoc ?? await loadUserDoc());
+      userDoc.profile = userDoc.profile || {};
+      userDoc.profile.name = nm;
+      await saveUserDoc(userDoc);
+      cachedDoc = userDoc;
+
+      scheduleProgressSync(userDoc);
+      setGreeting(userDoc);
+      showNameModal(false);
+      showToast("السلام عليكم يا " + nm);
+      // show intro after name set if not seen
+      if(!userDoc.profile?.seenIntro){ openIntro(); }
+    }catch(e){
+      console.error(e);
+      el("nameStatus").textContent = "تعذر الحفظ، جرّبي مرة أخرى.";
+    }
+  });
+
+  el("skipNameBtn").addEventListener("click", async ()=>{
+    showNameModal(false);
+    const userDoc = (cachedDoc ?? await loadUserDoc());
+    if(!userDoc.profile?.seenIntro){ openIntro(); }
+  });
+
+  async function markIntroSeen(){
+    if(!uid) return;
+    try{
+      const userDoc = (cachedDoc ?? await loadUserDoc());
+      userDoc.profile = userDoc.profile || {};
+      userDoc.profile.seenIntro = true;
+      userDoc.updatedAt = new Date().toISOString();
+      await saveUserDoc(userDoc);
+      cachedDoc = userDoc;
+      setGreeting(userDoc);
+    }catch(e){
+      console.error(e);
+    }
+  }
+
+  // autosave debounce
+  let autosaveTimer = null;
+  let saving = false;
+  let pending = false;
+
+  function scheduleAutosave(){
+    if(!uid || !currentPart) return;
+    if(autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(()=> autosaveNow(), 900);
+  }
+
+  async function autosaveNow(){
+    if(!uid || !currentPart) return;
+    if(saving){ pending = true; return; }
+    saving = true;
+    try{
+      const userDoc = (cachedDoc ?? await loadUserDoc());
+      userDoc.parts = userDoc.parts || {};
+      userDoc.profile = userDoc.profile || {};
+
+      userDoc.parts[String(currentPart)] = collectPart(currentPart);
+      userDoc.updatedAt = new Date().toISOString();
+
+      await saveUserDoc(userDoc);
+      cachedDoc = userDoc;
+
+      const part = userDoc.parts[String(currentPart)];
+      lastSavedEl.textContent = "آخر تعديل: " + fmtDate(part.updatedAt);
+      setGreeting(userDoc);
+    }catch(e){
+      console.error(e);
+    }finally{
+      saving = false;
+      if(pending){ pending = false; autosaveNow(); }
+    }
+  }
+
+  
+// --- Dash view switcher (My / Groups) ---
+function setDashView(which){
+  localStorage.setItem("dashView", which);
+
+  const viewMyEl = el("viewMy");
+  const viewGroupsEl = el("viewGroups");
+  const navMyBtn = el("navMy");
+  const navGroupsBtn = el("navGroups");
+
+  if(viewMyEl && viewGroupsEl){
+    viewMyEl.classList.toggle("show", which === "my");
+    viewGroupsEl.classList.toggle("show", which === "groups");
+  }
+  if(navMyBtn && navGroupsBtn){
+    navMyBtn.classList.toggle("active", which === "my");
+    navGroupsBtn.classList.toggle("active", which === "groups");
+  }
+
+  if(which === "groups"){
+    // force load groups every time we enter the tab
+    console.log("[ui] entering groups tab -> loading groups");
+    if(!currentUser){
+      // user clicked before auth state is ready — defer until onAuthStateChanged fires
+      pendingGroupsLoad = true;
+      return;
+    }
+    pendingGroupsLoad = false;
+    loadMyGroups().catch(console.error);
+    loadMyInvites().catch(console.error);
+    // safety: run again shortly in case DOM just switched
+    setTimeout(()=>{ loadMyGroups().catch(console.error); }, 150);
+  }
+}
+
+function wireDashNav(){
+  try{ el("navMy")?.addEventListener("click", ()=>setDashView("my")); }catch(e){console.error(e);}
+  try{ el("navGroups")?.addEventListener("click", ()=>setDashView("groups")); }catch(e){console.error(e);}
+  try{ el("bottomMy")?.addEventListener("click", ()=>setDashView("my")); }catch(e){console.error(e);}
+  try{ el("bottomGroups")?.addEventListener("click", ()=>setDashView("groups")); }catch(e){console.error(e);}
+}
+
+wireDashNav();
+
+async function openDash(){
+    cachedDoc = await loadUserDoc();
+    setGreeting(cachedDoc);
+    buildPartsGrid(cachedDoc);
+    showOnly("dash");
+    setDashView(localStorage.getItem("dashView") || "my");
+
+    maybeHelloToast(cachedDoc);
+
+    if(!cachedDoc.profile?.name){
+      showNameModal(true);
+    }else{
+      if(!cachedDoc.profile?.seenIntro){ openIntro(); }
+    }
+  }
+
+  async function openPart(partNum){
+    cachedDoc = await loadUserDoc();
+    setGreeting(cachedDoc);
+    currentPart = partNum;
+    loadPartToUI(partNum, cachedDoc);
+    showOnly("part");
+
+    maybeHelloToast(cachedDoc);
+  }
+
+  // Help button shows wizard anytime
+  el("helpBtn").addEventListener("click", openIntro);
+
+  // Auth actions
+  el("googleBtn").addEventListener("click", async ()=>{
+    try{
+      setAuthStatus("جاري فتح Google...", "");
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      setAuthStatus("تم ✅", "ok");
+    }catch(e){
+      console.error(e);
+      setAuthStatus(friendlyAuthError(e.code), "warn");
+    }
+  });
+
+  el("signInBtn").addEventListener("click", async ()=>{
+    try{
+      setAuthStatus("جاري تسجيل الدخول...", "");
+      await signInWithEmailAndPassword(auth, el("email").value.trim(), el("password").value);
+      setAuthStatus("تم ✅", "ok");
+    }catch(e){
+      console.error(e);
+      setAuthStatus(friendlyAuthError(e.code), "warn");
+    }
+  });
+
+  el("signUpBtn").addEventListener("click", async ()=>{
+    try{
+      setAuthStatus("جاري إنشاء الحساب...", "");
+      await createUserWithEmailAndPassword(auth, el("email").value.trim(), el("password").value);
+      setAuthStatus("تم إنشاء الحساب ✅", "ok");
+    }catch(e){
+      console.error(e);
+      setAuthStatus(friendlyAuthError(e.code), "warn");
+    }
+  });
+
+  el("resetPwBtn").addEventListener("click", async ()=>{
+    const email = el("email").value.trim();
+    if(!email){ setAuthStatus("اكتبي الإيميل أولاً.", "warn"); return; }
+    try{
+      await sendPasswordResetEmail(auth, email);
+      setAuthStatus("تم إرسال رابط إعادة التعيين ✅", "ok");
+    }catch(e){
+      console.error(e);
+      setAuthStatus(friendlyAuthError(e.code), "warn");
+    }
+  });
+
+  el("backBtn").addEventListener("click", async ()=>{
+    if(autosaveTimer){ clearTimeout(autosaveTimer); await autosaveNow(); }
+    await openDash();
+
+      // If the saved active view is "groups" (or user clicked Groups before auth was ready),
+      // make sure we actually load groups immediately.
+      try{
+        const wantsGroups =
+          (localStorage.getItem("activeView")==="groups") ||
+          (localStorage.getItem("dashView")==="groups") ||
+          pendingGroupsLoad;
+        if(wantsGroups){
+          setDashView("groups");
+        }
+      }catch(e){ console.error(e); }
+
+      // Restore last dash view (and load groups if needed)
+      setDashView(localStorage.getItem('dashView') || 'my');
+
+      try{ await loadMyInvites(); }catch(e){ console.error(e); }
+      try{ await loadMyGroups(); }catch(e){ console.error(e); }
+  });
+
+  el("logoutBtn").addEventListener("click", async ()=>{ await signOut(auth); });
+  el("logoutBtn2").addEventListener("click", async ()=>{ await signOut(auth); });
+
+  onAuthStateChanged(auth, async (user)=>{
+    if(user){
+      currentUser = user;
+      window.currentUser = user;
+      currentUserEmail = (user.email || "").trim();
+      uid = user.uid;
+      await openDash();
+    }else{
+      uid = null; currentPart = null; cachedDoc = null;
+      greetEl.textContent = "";
+      globalLastEl.textContent = "";
+      showOnly("auth");
+      setAuthStatus("سجّلي دخولك للمتابعة.", "");
+      sessionStorage.removeItem("helloShown");
+    }
+  });
+// ===== Groups: UI listeners =====
+createGroupBtn?.addEventListener("click", createGroup);
+  backToGroupsFromGroupBtn?.addEventListener("click", ()=>__setActiveView("groups"));
+  groupSendInviteBtn?.addEventListener("click", sendGroupInvite);
+
+  // ===== Parts (Popup) =====
+  editMyPartsBtn?.addEventListener("click", openPartsModal);
+  partsModalCloseBtn?.addEventListener("click", closePartsModal);
+  partsModalCancelBtn?.addEventListener("click", closePartsModal);
+  // close when clicking on overlay background
+  partsOverlayEl?.addEventListener("click", (e)=>{ if(e.target===partsOverlayEl) closePartsModal(); });
+
+  partsModalSaveBtn?.addEventListener("click", async ()=>{
+    await savePickedParts(partsModalSaveBtn);
+    closePartsModal();
+  });
+
+  // ===== Member parts (view) =====
+  memberPartsCloseBtn?.addEventListener("click", closeMemberParts);
+  memberPartsOkBtn?.addEventListener("click", closeMemberParts);
+  memberPartsOverlayEl?.addEventListener("click", (e)=>{ if(e.target===memberPartsOverlayEl) closeMemberParts(); });
+
+  groupInviteEmailEl?.addEventListener("keydown", (e)=>{ if(e.key==="Enter") sendGroupInvite(); });
+  savePickedPartsBtn?.addEventListener("click", savePickedParts);
+
+backToGroupsBtn?.addEventListener("click", ()=>window.__setActiveView?.("groups"));
+sendInviteBtn?.addEventListener("click", sendInvite);
+inviteEmailEl?.addEventListener("keydown", (e)=>{ if(e.key==="Enter") sendInvite(); });
+refreshGroupsBtn?.addEventListener("click", async ()=>{ await loadMyInvites(); await loadMyGroups(); });
+
+// When view changes (inside the shell navigator), refresh groups automatically.
+// Important: __setActiveView is created in the non-module script on DOMContentLoaded,
+// so we wrap it AFTER DOMContentLoaded to avoid "undefined" at module load time.
+window.addEventListener("DOMContentLoaded", ()=>{
+  try{
+    const _oldSetActive = window.__setActiveView;
+    if(typeof _oldSetActive === "function" && !_oldSetActive.__wrappedForGroups){
+      const wrapped = (which)=>{
+        _oldSetActive(which);
+        // Stop realtime members listener when leaving the group view
+        if(which !== "group"){
+          try{ if(membersUnsub) membersUnsub(); }catch(e){}
+          membersUnsub = null;
+        }
+        if(which==="groups"){
+          // refresh lists
+          loadMyInvites().catch(console.error);
+          loadMyGroups().catch(console.error);
+        }
+        if(which==="group"){
+          loadGroupPage().catch(console.error);
+        }
+      };
+      wrapped.__wrappedForGroups = true;
+      window.__setActiveView = wrapped;
+    }
+  }catch(e){ console.error(e); }
+});
+
+// After login, load lists
+// (called from auth state handler below)
+
+// Expose some actions for safety (in case any inline handlers exist)
+window.sendInvite = sendInvite;
+window.createGroup = createGroup;
+window.openGroupPage = openGroupPage;
+
+
+window.showToast = showToast;
+window.setDashView = setDashView;
+window.loadMyGroups = loadMyGroups;
+try{ el('navGroups')?.addEventListener('click', openGroupsTab); }catch(e){console.error(e);} 
+try{ el('bottomGroups')?.addEventListener('click', openGroupsTab); }catch(e){console.error(e);} 
+
+window.openGroupsTab = openGroupsTab;
+try{ el("navMy")?.addEventListener("click", ()=>setDashView("my")); }catch(e){console.error(e);} 
+try{ el("navGroups")?.addEventListener("click", ()=>setDashView("groups")); }catch(e){console.error(e);} 
+try{ el("bottomMy")?.addEventListener("click", ()=>setDashView("my")); }catch(e){console.error(e);} 
+try{ el("bottomGroups")?.addEventListener("click", ()=>setDashView("groups")); }catch(e){console.error(e);}
+
+function bindDashNav(){
+  const bind = (id, which)=>{
+    const b = el(id);
+    if(!b) return;
+    b.addEventListener("click", (e)=>{
+      e.preventDefault();
+      console.log(`[ui] click ${id} -> ${which}`);
+      setDashView(which);
+    }, { passive:false });
+  };
+  bind("navMy","my");
+  bind("mNavMy","my");
+  bind("bottomMy","my");
+  bind("navGroups","groups");
+  bind("mNavGroups","groups");
+  bind("bottomGroups","groups");
+  bind("goCreateFromGroups","groups"); // keep dashView in sync when opening groups then create
+}
+
+// bind once after module loads
+bindDashNav();
+</script>
+
+<!-- Mobile Bottom Navigation -->
+<nav class="bottomNav" id="bottomNav">
+  <div class="bottomNavInner">
+    <button class="bottomBtn active" id="mNavMy" type="button">
+      <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 12a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12Zm0 2c-4.1 0-7.5 2.2-7.5 5v1h15v-1c0-2.8-3.4-5-7.5-5Z"/></svg></div>
+      <div>صفحتي</div>
+    </button>
+    <button class="bottomBtn" id="mNavGroups" type="button">
+      <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M16.5 13c-2.6 0-4.8 1.3-5.5 3.2.6.7 1 1.5 1 2.3V20h9v-1.5c0-3-2.2-5.5-4.5-5.5ZM8.5 13c-3.3 0-6 2-6 4.5V20h9v-1.5c0-2.5-2.7-5.5-3-5.5Zm0-2a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm8 0a2.5 2.5 0 1 0-2.5-2.5A2.5 2.5 0 0 0 16.5 11Z"/></svg></div>
+      <div>مجموعاتي</div>
+    </button>
+    <button class="bottomBtn" id="mNavMore" type="button">
+      <div class="ico" aria-hidden="true" style="font-weight:900;font-size:20px;line-height:1">⋯</div>
+      <div>المزيد</div>
+    </button>
+  </div>
+</nav>
+
+<!-- Bottom Sheet -->
+<div class="sheetBackdrop" id="sheetBackdrop"></div>
+<div class="bottomSheet" id="bottomSheet" aria-hidden="true">
+  <div class="sheetHandle"></div>
+  <button class="sheetItem" id="sheetLogout" type="button">تسجيل خروج</button>
+</div>
+
+
+<!-- أجزاء: اختيار/تعديل (Popup) -->
+<div id="partsOverlay" class="overlay hide" role="dialog" aria-modal="true">
+  <div class="modal" style="width:min(720px,100%)">
+    <div class="modalHd">
+      <div>
+        <div class="modalTitle">اختيار الأجزاء</div>
+        <div class="muted" id="partsModalHint">اختاري بالضبط N أجزاء.</div>
+      </div>
+      <button class="iconBtn" id="partsModalClose" type="button" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modalBd">
+      <div id="partsPickerGridModal" class="partsGrid"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;align-items:center;justify-content:space-between">
+        <div class="muted" id="partsPickerCountModal">0 / 0</div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btnGhost" id="partsModalCancel" type="button">إلغاء</button>
+          <button class="btn" id="partsModalSave" type="button">تم</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- عرض أجزاء عضوة -->
+<div id="memberPartsOverlay" class="overlay hide" role="dialog" aria-modal="true">
+  <div class="modal" style="width:min(520px,100%)">
+    <div class="modalHd">
+      <div>
+        <div class="modalTitle" id="memberPartsTitle">اختيارات العضوة</div>
+        <div class="muted" id="memberPartsSubtitle"></div>
+      </div>
+      <button class="iconBtn" id="memberPartsClose" type="button" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modalBd">
+      <div id="memberPartsBody" class="muted" style="font-size:14px;line-height:1.8"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:14px">
+        <button class="btn" id="memberPartsOk" type="button">تمام</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

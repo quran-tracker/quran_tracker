@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn(){ return request.auth != null; }
+    function isSelf(uid){ return signedIn() && request.auth.uid == uid; }
+
+    match /quranTrackers/{uid} {
+      allow read, write: if isSelf(uid);
+    }
+
+    // Groups
+    match /groups/{groupId} {
+      allow create: if signedIn();
+      allow read: if signedIn(); // simplified for v1 (we'll tighten later)
+      allow update, delete: if signedIn(); // tighten later
+
+      match /members/{uid} {
+        allow read: if signedIn();
+        allow create, update: if isSelf(uid);
+        allow delete: if false;
+      }
+    }
+
+    // User's group pointers for easy listing
+    match /userGroups/{uid}/groups/{groupId} {
+      allow read, write: if isSelf(uid);
+    }
+
+    // Invites by email
+    match /groupInvites/{inviteId} {
+      allow create: if signedIn();
+      allow read: if signedIn(); // simplified for v1
+      allow update: if signedIn();
+      allow delete: if false;
+    }
+  }
+}
