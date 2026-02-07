@@ -657,7 +657,7 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
           </div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
-          <button class="btn" id="createGroupBtn" type="button" onclick="try{window.createGroup&&window.createGroup()}catch(e){try{alert(e?.message||e)}catch(_){}}">إنشاء</button>
+          <button class="btn" id="createGroupBtn" type="button">إنشاء</button>
           <button class="btn btnGhost" id="backToGroups" type="button">رجوع لمجموعاتي</button>
         </div>
         <div id="createdGroupBox" class="panel" style="display:none;margin-top:10px">
@@ -1991,13 +1991,18 @@ async function respondInvite(inviteId, newStatus, inv){
   }
 }
 
+// Guard against double execution (double-click, duplicated listeners, form submit, etc.)
+let __creatingGroup = false;
 async function createGroup(){
+  if(__creatingGroup) return;
   const name = (groupNameEl.value || "").trim();
   const n = Number(groupNEl.value || 0);
 
   if(!currentUser){ toast("تنبيه", "سجّلي دخول أولاً."); return; }
   if(!name){ toast("تنبيه", "اكتبي اسم المجموعة."); return; }
   if(!n || n<1 || n>30){ toast("تنبيه", "اختاري عدد أجزاء صحيح (1–30)."); return; }
+
+  __creatingGroup = true;
 
   createGroupBtn.disabled = true;
   try{
@@ -2054,6 +2059,7 @@ async function createGroup(){
     toast("خطأ", e?.code ? `تعذر إنشاء المجموعة: ${e.code}` : "تعذر إنشاء المجموعة.");
   }finally{
     createGroupBtn.disabled = false;
+    __creatingGroup = false;
   }
 }
 
@@ -2073,13 +2079,17 @@ async function loadSentInvites(){
     return;
   }
 
-  const rows=[];
+  // Dedupe defensively by doc.id (and fallback by email)
+  const m = new Map();
   snap.forEach(d=>{
-    const inv=d.data();
-    const t=inv?.createdAt?.seconds ? inv.createdAt.seconds : 0;
-    rows.push({inv,t});
+    const inv = d.data() || {};
+    const key = d.id || (inv.invitedEmailLower || inv.invitedEmail || Math.random());
+    const t = inv?.createdAt?.seconds ? inv.createdAt.seconds : 0;
+    // keep newest if duplicated
+    const prev = m.get(key);
+    if(!prev || t > prev.t) m.set(key, { inv, t });
   });
-  rows.sort((a,b)=>b.t-a.t);
+  const rows = [...m.values()].sort((a,b)=>b.t-a.t);
 
   rows.forEach(({inv})=>{
     const st = inv.status === "pending" ? "بانتظار القبول" : (inv.status==="accepted" ? "تم القبول" : (inv.status==="declined" ? "تم الرفض" : inv.status));
