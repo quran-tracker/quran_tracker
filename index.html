@@ -1229,13 +1229,15 @@ const sentInvitesEmptyEl = el("sentInvitesEmpty");
 let __invitesUnsub1 = null;
 let __invitesUnsub2 = null;
 let __sentInvitesUnsub = null;
+let __groupInvitesUnsub = null;
 let __renderInvitesTimer = null;
 
 function stopInviteListeners(){
   try{ __invitesUnsub1 && __invitesUnsub1(); }catch(e){}
   try{ __invitesUnsub2 && __invitesUnsub2(); }catch(e){}
   try{ __sentInvitesUnsub && __sentInvitesUnsub(); }catch(e){}
-  __invitesUnsub1 = __invitesUnsub2 = __sentInvitesUnsub = null;
+  try{ __groupInvitesUnsub && __groupInvitesUnsub(); }catch(e){}
+  __invitesUnsub1 = __invitesUnsub2 = __sentInvitesUnsub = __groupInvitesUnsub = null;
 }
 
 function __scheduleRenderInvites(renderFn){
@@ -1468,38 +1470,57 @@ function updatePartsPickerCount(){
 }
 
 async function loadGroupInvites(){
+  // Live list of *pending* invites for this group (sender view).
+  // When the invite is accepted/declined, it disappears automatically.
   groupInvitesListEl.innerHTML = "";
   groupInvitesEmptyEl.style.display = "none";
 
+  if(!activeGroupId) return;
+
+  try{ __groupInvitesUnsub && __groupInvitesUnsub(); }catch(e){}
+  __groupInvitesUnsub = null;
+
   const qInv = query(
     collection(db, "groupInvites"),
-    where("groupId","==", activeGroupId)
+    where("groupId","==", activeGroupId),
+    where("status","==","pending")
   );
-  const snap = await getDocs(qInv);
 
-  if(snap.empty){
-    groupInvitesEmptyEl.style.display = "block";
-    return;
-  }
+  __groupInvitesUnsub = onSnapshot(qInv, (snap)=>{
+    groupInvitesListEl.innerHTML = "";
+    groupInvitesEmptyEl.style.display = "none";
 
-  const rows = [];
-  snap.forEach(d=>{
-    const inv = d.data();
-    const t = inv?.createdAt?.seconds ? inv.createdAt.seconds : 0;
-    rows.push({ inv, t });
-  });
-  rows.sort((a,b)=> b.t - a.t);
+    if(snap.empty){
+      groupInvitesEmptyEl.textContent = "لا توجد دعوات معلّقة.";
+      groupInvitesEmptyEl.style.display = "block";
+      return;
+    }
 
-  rows.forEach(({inv})=>{
-    const st = inv.status==="pending" ? "بانتظار القبول" : (inv.status==="accepted" ? "تم القبول" : (inv.status==="declined" ? "تم الرفض" : inv.status));
-    const row = itemRow({
-      title: inv.invitedEmail,
-      sub: `${st} • ${fmtTime(inv.createdAt)}`,
-      right: null
+    const rows = [];
+    snap.forEach(d=>{
+      const inv = d.data() || {};
+      const t = inv?.createdAt?.seconds ? inv.createdAt.seconds : 0;
+      rows.push({ id: d.id, inv, t });
     });
-    groupInvitesListEl.appendChild(row);
-  });
+    rows.sort((a,b)=> b.t - a.t);
+
+    // Safety: avoid rendering duplicates even if the callback fires multiple times (cache/server).
+    const seen = new Set();
+    rows.forEach(({id, inv})=>{
+      if(seen.has(id)) return;
+      seen.add(id);
+
+      const row = itemRow({
+        title: inv.invitedEmail,
+        sub: `بانتظار القبول • ${fmtTime(inv.createdAt)}`,
+        right: null
+      });
+      row.dataset.inviteId = id;
+      groupInvitesListEl.appendChild(row);
+    });
+  }, (e)=>{ console.error("groupInvites listener error", e); });
 }
+
 
 async function sendGroupInvite(){
   const emailRaw = (groupInviteEmailEl.value || "").trim();
