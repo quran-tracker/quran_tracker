@@ -1132,6 +1132,41 @@ window.addEventListener('unhandledrejection', (e)=>{
     return {started, done, حفظPct, تثبيتPct};
   }
 
+  // =================== User Stats (stored) ===================
+  // We store per-part memorization/fixation percentages under each user doc
+  // so both the personal page and group pages can read them without re-computing.
+  // This also avoids the "member summary is old" problem for specific users.
+  function computeUserStatsFromParts(userDoc, isoNow){
+    const parts = (userDoc && userDoc.parts && typeof userDoc.parts === "object") ? userDoc.parts : {};
+    const byPart = {};
+    let memSum = 0, memCnt = 0;
+    let fixSum = 0, fixCnt = 0;
+
+    for(let p=1; p<=30; p++){
+      const raw = parts[String(p)];
+      const pr = calcPartProgress(raw, p);
+      byPart[String(p)] = {
+        memPct: Number(pr.حفظPct || 0) || 0,
+        fixPct: Number(pr.تثبيتPct || 0) || 0,
+        done: !!pr.done,
+        started: !!pr.started
+      };
+      // Averages on started parts only (more fair / matches user expectation)
+      if(byPart[String(p)].memPct > 0){ memSum += byPart[String(p)].memPct; memCnt++; }
+      if(byPart[String(p)].fixPct > 0){ fixSum += byPart[String(p)].fixPct; fixCnt++; }
+    }
+
+    const avgMemStarted = memCnt ? Math.round(memSum / memCnt) : 0;
+    const avgFixStarted = fixCnt ? Math.round(fixSum / fixCnt) : 0;
+
+    return {
+      byPart,                 // {"1":{memPct,fixPct,done,started}, ...}
+      avgMemStarted,
+      avgFixStarted,
+      updatedAt: isoNow || new Date().toISOString()
+    };
+  }
+
   // ===== Color state mapping for parts (v24_40) =====
 function __applyPartStateClass(btn, pr){
   const mem = Number(pr?.حفظPct ?? 0) || 0;
@@ -1166,7 +1201,9 @@ function buildPartsGrid(userDoc){
       btn.type="button";
       btn.className="partBtn";
       const part = userDoc.parts?.[String(p)];
-      const pr = calcPartProgress(part, p);
+      const st = userDoc?.stats?.byPart?.[String(p)];
+      const pr = st ? { started:!!st.started, done:!!st.done, حفظPct:Number(st.memPct||0)||0, تثبيتPct:Number(st.fixPct||0)||0 }
+                    : calcPartProgress(part, p);
 
       
       __applyPartStateClass(btn, pr);
@@ -1731,20 +1768,27 @@ function buildProgressFromTracker(userDoc, selectedParts){
   if(!p.length) return { summary:null, perPart:{} };
 
   let doneCount = 0;
-  let avgMem = 0;
-  let avgFix = 0;
+  let avgMemSum = 0;
+  let avgFixSumAll = 0;
+  let avgFixSumStarted = 0;
+  let avgFixCntStarted = 0;
 
   for(const partNum of p){
-    const raw = userDoc?.parts?.[String(partNum)];
-    const pr = calcPartProgress(raw, partNum);
+    // Prefer stored per-part stats if available
+    const st = userDoc?.stats?.byPart?.[String(partNum)];
+    const pr = st ? { done: !!st.done, حفظPct: Number(st.memPct||0)||0, تثبيتPct: Number(st.fixPct||0)||0 }
+                  : calcPartProgress(userDoc?.parts?.[String(partNum)], partNum);
     if(pr.done) doneCount++;
-    avgMem += pr.حفظPct;
-    avgFix += pr.تثبيتPct;
+    avgMemSum += pr.حفظPct;
+    avgFixSumAll += pr.تثبيتPct;
+    if(pr.تثبيتPct > 0){ avgFixSumStarted += pr.تثبيتPct; avgFixCntStarted++; }
     perPart[String(partNum)] = { memPct: pr.حفظPct, fixPct: pr.تثبيتPct, done: !!pr.done };
   }
 
-  avgMem = Math.round(avgMem / p.length);
-  avgFix = Math.round(avgFix / p.length);
+  const avgMem = Math.round(avgMemSum / p.length);
+  // More fair fixation avg: on started parts only (if none started, show 0)
+  const avgFix = avgFixCntStarted ? Math.round(avgFixSumStarted / avgFixCntStarted) : 0;
+  const avgFixAll = Math.round(avgFixSumAll / p.length);
   const pct = Math.round((doneCount / p.length) * 100);
 
   const summary = {
@@ -1752,7 +1796,8 @@ function buildProgressFromTracker(userDoc, selectedParts){
     done: doneCount,
     pct,
     avgMem,
-    avgFix
+    avgFix,
+    avgFixAll
   };
   return { summary, perPart };
 }
@@ -2255,7 +2300,11 @@ async function sendInvite(){
   }
   async function saveUserDoc(userDoc){
     // Keep a simple updatedAt stamp for UI + syncing
-    userDoc.updatedAt = new Date().toISOString();
+    const isoNow = new Date().toISOString();
+    userDoc.updatedAt = isoNow;
+    // Persist computed stats (per-part memorization/fixation percentages)
+    // so we can render personal + group views without recalculating.
+    try{ userDoc.stats = computeUserStatsFromParts(userDoc, isoNow); }catch(e){}
     const ref = doc(db, "quranTrackers", uid);
     await setDoc(ref, userDoc, { merge:true });
     // Push my summary (حفظ + تثبيت) إلى المجموعات التي أنا فيها
