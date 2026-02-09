@@ -1225,6 +1225,25 @@ const sendInviteBtn = el("sendInviteBtn");
 const sentInvitesListEl = el("sentInvitesList");
 const sentInvitesEmptyEl = el("sentInvitesEmpty");
 
+// Live invite listeners (avoid duplicated rendering / keep sender+receiver in sync)
+let __invitesUnsub1 = null;
+let __invitesUnsub2 = null;
+let __sentInvitesUnsub = null;
+let __renderInvitesTimer = null;
+
+function stopInviteListeners(){
+  try{ __invitesUnsub1 && __invitesUnsub1(); }catch(e){}
+  try{ __invitesUnsub2 && __invitesUnsub2(); }catch(e){}
+  try{ __sentInvitesUnsub && __sentInvitesUnsub(); }catch(e){}
+  __invitesUnsub1 = __invitesUnsub2 = __sentInvitesUnsub = null;
+}
+
+function __scheduleRenderInvites(renderFn){
+  // Small debounce because we may merge two snapshots (back-compat queries)
+  if(__renderInvitesTimer) clearTimeout(__renderInvitesTimer);
+  __renderInvitesTimer = setTimeout(renderFn, 30);
+}
+
 // Group page
 const groupTitleEl = el("groupTitle");
 const groupSubEl = el("groupSub");
@@ -1868,67 +1887,97 @@ function updateMyPartsSummary(){
 
 
 async function loadMyInvites(){
+  // Live (onSnapshot): renders pending invites only and prevents duplicates.
   if(!currentUserEmail) return;
+
+  // stop previous listeners (e.g., if user switches)
+  try{ __invitesUnsub1 && __invitesUnsub1(); }catch(e){}
+  try{ __invitesUnsub2 && __invitesUnsub2(); }catch(e){}
+  __invitesUnsub1 = __invitesUnsub2 = null;
+
   invitesListEl.innerHTML = "";
   invitesEmptyEl.style.display = "none";
 
   const emailLower = normEmail(currentUserEmail);
 
-  // Backward-compat: old invites might not have invitedEmailLower
+  // Merge results from two queries for backward compatibility.
+  const merged = new Map();
+
+  const render = ()=>{
+    invitesListEl.innerHTML = "";
+    invitesEmptyEl.style.display = "none";
+
+    const rows = [];
+    for(const [id, inv] of merged.entries()){
+      const t = inv?.createdAt?.seconds ? inv.createdAt.seconds : 0;
+      rows.push({ id, inv, t });
+    }
+    rows.sort((a,b)=>b.t-a.t);
+
+    if(rows.length === 0){
+      invitesEmptyEl.style.display = "block";
+      return;
+    }
+
+    rows.forEach(({id, inv})=>{
+      const accept = document.createElement("button");
+      accept.className = "miniBtn";
+      accept.textContent = "قبول";
+      accept.onclick = ()=>respondInvite(id, "accepted", inv);
+
+      const decline = document.createElement("button");
+      decline.className = "miniBtn";
+      decline.textContent = "رفض";
+      decline.onclick = ()=>respondInvite(id, "declined", inv);
+
+      const actions = document.createElement("div");
+      actions.className = "actions";
+      actions.appendChild(accept);
+      actions.appendChild(decline);
+
+      const row = itemRow({
+        title: inv.groupName || "دعوة مجموعة",
+        sub: `من: ${inv.invitedByEmail || ""} • ${fmtTime(inv.createdAt)}`,
+        right: actions
+      });
+      row.dataset.inviteId = id;
+      invitesListEl.appendChild(row);
+    });
+  };
+
+  const onSnap = (snap)=>{
+    snap.docChanges().forEach(ch=>{
+      const id = ch.doc.id;
+      const inv = ch.doc.data() || {};
+
+      if(ch.type === "removed"){
+        merged.delete(id);
+      }else{
+        // Keep ONLY pending
+        if(inv.status === "pending") merged.set(id, inv);
+        else merged.delete(id);
+      }
+    });
+    __scheduleRenderInvites(render);
+  };
+
   const q1 = query(
     collection(db, "groupInvites"),
     where("invitedEmailLower", "==", emailLower),
     where("status", "==", "pending")
   );
+
   const q2 = query(
     collection(db, "groupInvites"),
     where("invitedEmail", "==", currentUserEmail),
     where("status", "==", "pending")
   );
 
-  const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-  const docsMap = new Map();
-  snap1.forEach(d=>docsMap.set(d.id, d));
-  snap2.forEach(d=>docsMap.set(d.id, d));
-  const snap = { empty: docsMap.size===0, forEach: (fn)=>{ for(const d of docsMap.values()) fn(d); } };
-
-  if(snap.empty){
-    invitesEmptyEl.style.display = "block";
-    return;
-  }
-
-  const rows=[];
-  snap.forEach(d=>{
-    const inv=d.data();
-    const t=inv?.createdAt?.seconds ? inv.createdAt.seconds : 0;
-    rows.push({id:d.id, inv, t});
-  });
-  rows.sort((a,b)=>b.t-a.t);
-
-  rows.forEach(({id, inv})=>{
-    const accept = document.createElement("button");
-    accept.className = "miniBtn";
-    accept.textContent = "قبول";
-    accept.onclick = ()=>respondInvite(id, "accepted", inv);
-
-    const decline = document.createElement("button");
-    decline.className = "miniBtn";
-    decline.textContent = "رفض";
-    decline.onclick = ()=>respondInvite(id, "declined", inv);
-
-    const actions = document.createElement("div");
-    actions.className = "actions";
-    actions.appendChild(accept);
-    actions.appendChild(decline);
-
-    const row = itemRow({
-      title: inv.groupName || "دعوة مجموعة",
-      sub: `من: ${inv.invitedByEmail || ""} • ${fmtTime(inv.createdAt)}`,
-      right: actions
-    });
-    invitesListEl.appendChild(row);
-  });
+  __invitesUnsub1 = onSnapshot(q1, onSnap, (e)=>{ console.error("invites q1 error", e); });
+  __invitesUnsub2 = onSnapshot(q2, onSnap, (e)=>{ console.error("invites q2 error", e); });
 }
+
+
 
 // ===== Invite actions (accept/decline) =====
 // When a member accepts an invite, she already agreed that group-related data
@@ -2074,43 +2123,53 @@ async function createGroup(){
 }
 
 async function loadSentInvites(){
+  // Live (onSnapshot): show pending invites for the selected/created group.
+  // When the invite is accepted/declined, it disappears automatically here.
   if(!createdGroupId) return;
+
+  try{ __sentInvitesUnsub && __sentInvitesUnsub(); }catch(e){}
+  __sentInvitesUnsub = null;
+
   sentInvitesListEl.innerHTML = "";
   sentInvitesEmptyEl.style.display = "none";
 
   const q = query(
     collection(db, "groupInvites"),
-    where("groupId", "==", createdGroupId)
+    where("groupId", "==", createdGroupId),
+    where("status", "==", "pending")
   );
-  const snap = await getDocs(q);
 
-  if(snap.empty){
-    sentInvitesEmptyEl.style.display = "block";
-    return;
-  }
+  __sentInvitesUnsub = onSnapshot(q, (snap)=>{
+    sentInvitesListEl.innerHTML = "";
+    sentInvitesEmptyEl.style.display = "none";
 
-  // Dedupe defensively by doc.id (and fallback by email)
-  const m = new Map();
-  snap.forEach(d=>{
-    const inv = d.data() || {};
-    const key = d.id || (inv.invitedEmailLower || inv.invitedEmail || Math.random());
-    const t = inv?.createdAt?.seconds ? inv.createdAt.seconds : 0;
-    // keep newest if duplicated
-    const prev = m.get(key);
-    if(!prev || t > prev.t) m.set(key, { inv, t });
-  });
-  const rows = [...m.values()].sort((a,b)=>b.t-a.t);
+    if(snap.empty){
+      sentInvitesEmptyEl.textContent = "لا توجد دعوات معلّقة.";
+      sentInvitesEmptyEl.style.display = "block";
+      return;
+    }
 
-  rows.forEach(({inv})=>{
-    const st = inv.status === "pending" ? "بانتظار القبول" : (inv.status==="accepted" ? "تم القبول" : (inv.status==="declined" ? "تم الرفض" : inv.status));
-    const row = itemRow({
-      title: inv.invitedEmail,
-      sub: `${st} • ${fmtTime(inv.createdAt)}`,
-      right: null
+    const rows=[];
+    snap.forEach(d=>{
+      const inv = d.data() || {};
+      const t = inv?.createdAt?.seconds ? inv.createdAt.seconds : 0;
+      rows.push({id:d.id, inv, t});
     });
-    sentInvitesListEl.appendChild(row);
-  });
+    rows.sort((a,b)=>b.t-a.t);
+
+    rows.forEach(({id, inv})=>{
+      const row = itemRow({
+        title: inv.invitedEmail,
+        sub: `بانتظار القبول • ${fmtTime(inv.createdAt)}`,
+        right: null
+      });
+      row.dataset.inviteId = id;
+      sentInvitesListEl.appendChild(row);
+    });
+  }, (e)=>{ console.error("sentInvites listener error", e); });
 }
+
+
 
 async function sendInvite(){
   if(!createdGroupId){ toast("تنبيه", "أنشئي مجموعة أولاً."); return; }
