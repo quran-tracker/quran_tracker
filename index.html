@@ -1657,6 +1657,7 @@ function closePartsModal(){
 }
 
 let _memberPreviewToken = 0;
+let memberPartsUnsub = null;
 function escHtml(s){
   return String(s ?? "").replace(/[&<>"']/g, (c)=>({
     "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
@@ -1754,6 +1755,10 @@ async function showMemberParts(name, parts, memberUid){
   const token = ++_memberPreviewToken;
   const p = Array.isArray(parts) ? parts.slice().sort((a,b)=>a-b) : [];
 
+  // stop previous live listener (if any)
+  try{ if(memberPartsUnsub) memberPartsUnsub(); }catch(e){}
+  memberPartsUnsub = null;
+
   memberPartsTitleEl.textContent = `تقدّم ${name}`;
   memberPartsSubtitleEl.textContent = p.length ? `الأجزاء المختارة: ${p.length}` : "لم تختر أجزاء بعد";
   memberPartsBodyEl.innerHTML = "<div class='muted'>... جاري التحميل</div>";
@@ -1766,85 +1771,98 @@ async function showMemberParts(name, parts, memberUid){
     return;
   }
 
-  
-// Read member public progress summary from:
-// groups/{groupId}/members/{uid}  (safe to read for signed-in users)
-let memberMem = null;
-try{
-  if(activeGroupId && memberUid){
-    const snap = await getDoc(doc(db, "groups", activeGroupId, "members", memberUid));
-    if(snap.exists()) memberMem = snap.data();
-  }
-}catch(e){
-  console.warn("[memberProgress] cannot read member summary for", memberUid, e);
-  memberMem = null;
-}
+  // Render helper (safe)
+  const renderFromSummary = (memberMem)=>{
+    if(token !== _memberPreviewToken) return;
 
-if(token !== _memberPreviewToken) return;
+    const header = document.createElement("div");
+    header.style.marginBottom = "12px";
 
-// Build UI
-const header = document.createElement("div");
-header.style.marginBottom = "12px";
+    const sum = memberMem?.progressSummary || null;
+    const per = memberMem?.partProgress || null;
 
-const sum = memberMem?.progressSummary || null;
-const per = memberMem?.partProgress || null;
+    if(!sum || !per){
+      // Fallback: show parts only (still useful)
+      header.innerHTML = `<div class='tag' style='text-align:right'>الأجزاء: ${escHtml(p.join("، "))}</div>`;
+      memberPartsBodyEl.innerHTML = "";
+      memberPartsBodyEl.appendChild(header);
+      memberPartsBodyEl.insertAdjacentHTML("beforeend",
+        `<div class='muted' style='margin-top:10px;line-height:1.8'>ملاحظة: لم يتم نشر ملخّص التقدّم لهذه العضوة بعد. يظهر تلقائيًا بعد قبولها الدعوة للمجموعة أو بعد تحديث حفظها.</div>`
+      );
+      return;
+    }
 
-if(!sum || !per){
-  // Fallback: show parts only (still useful)
-  header.innerHTML = `<div class='tag' style='text-align:right'>الأجزاء: ${escHtml(p.join("، "))}</div>`;
-  memberPartsBodyEl.innerHTML = "";
-  memberPartsBodyEl.appendChild(header);
-  memberPartsBodyEl.insertAdjacentHTML("beforeend",
-    `<div class='muted' style='margin-top:10px;line-height:1.8'>ملاحظة: لم يتم نشر ملخّص التقدّم لهذه العضوة بعد. يظهر تلقائيًا بعد قبولها الدعوة للمجموعة أو بعد حفظ اختيار الأجزاء.</div>`
-  );
-  return;
-}
+    // Use the published summary (no need to read private quranTrackers)
+    const doneCount = Number(sum.done || 0);
+    const avgMem = Number(sum.avgMem || 0);
+    const avgFix = Number(sum.avgFix || 0);
+    const pct = Number(sum.pct || 0);
 
+    const rows = [];
+    for(const partNum of p){
+      const pp = per[String(partNum)] || {};
+      const pr = { حفظPct: Number(pp.memPct||0), تثبيتPct: Number(pp.fixPct||0), done: !!pp.done };
+      rows.push({ partNum, pr });
+    }
 
-// Use the published summary (no need to read private quranTrackers)
-const doneCount = Number(sum.done || 0);
-const avgMem = Number(sum.avgMem || 0);
-const avgFix = Number(sum.avgFix || 0);
-const pct = Number(sum.pct || 0);
-
-const rows = [];
-for(const partNum of p){
-  const pp = per[String(partNum)] || {};
-  const pr = { حفظPct: Number(pp.memPct||0), تثبيتPct: Number(pp.fixPct||0), done: !!pp.done };
-  rows.push({ partNum, pr });
-}
-
-header.innerHTML = `
-  <div class='row' style='margin-top:0'>
-    <div class='tag' style='text-align:right'>مكتمل: ${doneCount} / ${p.length} (${pct}%)</div>
-    <div class='tag' style='text-align:right'>متوسط  ${avgMem}% • متوسط التثبيت: ${avgFix}%</div>
-  </div>
-`;
-
-const list = document.createElement("div");
-  list.style.display = "grid";
-  list.style.gap = "10px";
-
-  rows.forEach(({partNum, pr})=>{
-    const r = PART_RANGES[String(partNum)];
-    const box = document.createElement("div");
-    box.className = "panel";
-    box.style.padding = "12px";
-    box.innerHTML = `
-      <div style='display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap'>
-        <div style='font-weight:900'>الجزء ${partNum}</div>
-        <div class='tag'>صفحات ${r.start}–${r.end}</div>
+    header.innerHTML = `
+      <div class='row' style='margin-top:0'>
+        <div class='tag' style='text-align:right'>مكتمل: ${doneCount} / ${p.length} (${pct}%)</div>
+        <div class='tag' style='text-align:right'>متوسط الحفظ: ${avgMem}% • متوسط التثبيت: ${avgFix}%</div>
       </div>
-      <div class='muted' style='margin-top:6px'> <b>${pr.حفظPct}%</b> • تثبيت: <b>${pr.تثبيتPct}%</b> ${pr.done ? "• <b>مكتمل ✅</b>" : ""}</div>
+      <div class='tag' style='text-align:right;margin-top:8px'>الأجزاء: ${escHtml(p.join("، "))}</div>
     `;
-    list.appendChild(box);
-  });
 
-  memberPartsBodyEl.innerHTML = "";
-  memberPartsBodyEl.appendChild(header);
-  memberPartsBodyEl.appendChild(list);
+    const list = document.createElement("div");
+    list.style.display = "grid";
+    list.style.gridTemplateColumns = "1fr";
+    list.style.gap = "10px";
+
+    rows.forEach(({partNum, pr})=>{
+      const r = partRanges(partNum);
+      const box = document.createElement("div");
+      box.className = "panel";
+      box.style.padding = "12px";
+      box.innerHTML = `
+        <div style='display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap'>
+          <div style='font-weight:900'>الجزء ${partNum}</div>
+          <div class='tag'>صفحات ${r.start}–${r.end}</div>
+        </div>
+        <div class='muted' style='margin-top:6px'> <b>${pr.حفظPct}%</b> • تثبيت: <b>${pr.تثبيتPct}%</b> ${pr.done ? "• <b>مكتمل ✅</b>" : ""}</div>
+      `;
+      list.appendChild(box);
+    });
+
+    memberPartsBodyEl.innerHTML = "";
+    memberPartsBodyEl.appendChild(header);
+    memberPartsBodyEl.appendChild(list);
+  };
+
+  if(!activeGroupId || !memberUid){
+    renderFromSummary(null);
+    return;
+  }
+
+  // Live: listen to the published member summary inside this group
+  try{
+    const memRef = doc(db, "groups", activeGroupId, "members", memberUid);
+    memberPartsUnsub = onSnapshot(memRef, (snap)=>{
+      const memberMem = snap.exists() ? (snap.data()||{}) : null;
+      renderFromSummary(memberMem);
+    }, (err)=>{
+      console.warn("[memberProgress] listener error for", memberUid, err);
+      renderFromSummary(null);
+    });
+  }catch(e){
+    console.warn("[memberProgress] cannot listen for", memberUid, e);
+    renderFromSummary(null);
+  }
 }
+
 function closeMemberParts(){
+  // stop live listener (if any)
+  try{ if(memberPartsUnsub) memberPartsUnsub(); }catch(e){}
+  memberPartsUnsub = null;
   memberPartsOverlayEl.classList.add("hide");
 }
 
@@ -2151,6 +2169,28 @@ async function sendInvite(){
   let uid = null;
   let currentPart = null;
   let cachedDoc = null;
+  let myTrackerUnsub = null;
+
+  function startMyTrackerListener(){
+    // Listen to my own tracker doc so group progress updates even if changes happen from another tab/device.
+    try{ if(myTrackerUnsub) myTrackerUnsub(); }catch(e){}
+    myTrackerUnsub = null;
+
+    try{
+      if(!uid) return;
+      const ref = doc(db, "quranTrackers", uid);
+      myTrackerUnsub = onSnapshot(ref, (snap)=>{
+        if(!snap.exists()) return;
+        cachedDoc = snap.data();
+        scheduleProgressSync(cachedDoc);
+      }, (err)=>{
+        console.warn("[myTracker] listener error", err);
+      });
+    }catch(e){
+      console.warn("[myTracker] cannot start listener", e);
+    }
+  }
+
 
   async function loadUserDoc(){
     const ref = doc(db, "quranTrackers", uid);
@@ -2246,6 +2286,8 @@ async function sendInvite(){
 
       await saveUserDoc(userDoc);
       cachedDoc = userDoc;
+      // Live sync my progress to groups whenever I update my tracker
+      scheduleProgressSync(userDoc);
 
       const part = userDoc.parts[String(currentPart)];
       lastSavedEl.textContent = "آخر تعديل: " + fmtDate(part.updatedAt);
@@ -2304,6 +2346,10 @@ wireDashNav();
 
 async function openDash(){
     cachedDoc = await loadUserDoc();
+    // Start live listener for my tracker so group progress stays updated
+    startMyTrackerListener();
+    // push current snapshot once
+    scheduleProgressSync(cachedDoc);
     setGreeting(cachedDoc);
     buildPartsGrid(cachedDoc);
     showOnly("dash");
@@ -2413,6 +2459,8 @@ async function openDash(){
       await openDash();
     }else{
       uid = null; currentPart = null; cachedDoc = null;
+      try{ if(myTrackerUnsub) myTrackerUnsub(); }catch(e){}
+      myTrackerUnsub = null;
       greetEl.textContent = "";
       globalLastEl.textContent = "";
       showOnly("auth");
