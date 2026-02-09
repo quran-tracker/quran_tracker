@@ -2005,6 +2005,8 @@ async function respondInvite(inviteId, newStatus, inv){
 let __creatingGroup = false;
 async function createGroup(){
   if(__creatingGroup) return;
+  __creatingGroup = true;
+  createGroupBtn && (createGroupBtn.disabled = true, createGroupBtn.style.pointerEvents = "none");
   const name = (groupNameEl.value || "").trim();
   const n = Number(groupNEl.value || 0);
 
@@ -2012,9 +2014,7 @@ async function createGroup(){
   if(!name){ toast("تنبيه", "اكتبي اسم المجموعة."); return; }
   if(!n || n<1 || n>30){ toast("تنبيه", "اختاري عدد أجزاء صحيح (1–30)."); return; }
 
-  __creatingGroup = true;
-
-  createGroupBtn.disabled = true;
+  
   try{
     // Create id first so we can write multiple docs atomically
     const gRef = doc(collection(db, "groups"));
@@ -2431,7 +2431,10 @@ async function openDash(){
     }
   });
 // ===== Groups: UI listeners =====
-createGroupBtn?.addEventListener("click", createGroup);
+if (createGroupBtn && !createGroupBtn.dataset.bound) {
+  createGroupBtn.dataset.bound = "1";
+  createGroupBtn.addEventListener("click", createGroup);
+}
   backToGroupsFromGroupBtn?.addEventListener("click", ()=>__setActiveView("groups"));
   groupSendInviteBtn?.addEventListener("click", sendGroupInvite);
 
