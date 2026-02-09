@@ -1213,6 +1213,7 @@ const invitesListEl = el("invitesList");
 const invitesEmptyEl = el("invitesEmpty");
 const myGroupsListEl = el("myGroupsList");
 const myGroupsEmptyEl = el("myGroupsEmpty");
+let _myGroupsLoadToken = 0;
 
 const groupNameEl = el("groupName");
 const groupNEl = el("groupN");
@@ -1351,6 +1352,7 @@ function makeProgressRing(pct){
 
 
 async function loadMyGroups(){
+  const token = ++_myGroupsLoadToken;
   if(!currentUser){
     myGroupsListEl.innerHTML = "";
     myGroupsEmptyEl.style.display = "block";
@@ -1370,6 +1372,8 @@ async function loadMyGroups(){
     console.error(e);
     toast("خطأ", e?.code ? `تعذر تحميل مجموعاتي: ${e.code}` : "تعذر تحميل مجموعاتي.");
   }
+
+  if(token !== _myGroupsLoadToken) return;
 
   // Fallback: groups I created (حتى لو userGroups ما رجعت لأي سبب)
   if(groups.length === 0){
@@ -1392,6 +1396,7 @@ async function loadMyGroups(){
     }
   }
 
+  if(token !== _myGroupsLoadToken) return;
   if(groups.length === 0){
     myGroupsEmptyEl.style.display = "block";
     return;
@@ -2249,8 +2254,12 @@ async function sendInvite(){
     return { profile:{}, parts:{} };
   }
   async function saveUserDoc(userDoc){
+    // Keep a simple updatedAt stamp for UI + syncing
+    userDoc.updatedAt = new Date().toISOString();
     const ref = doc(db, "quranTrackers", uid);
     await setDoc(ref, userDoc, { merge:true });
+    // Push my summary (حفظ + تثبيت) إلى المجموعات التي أنا فيها
+    try{ scheduleProgressSync(userDoc); }catch(e){}
   }
 
   function setGreeting(userDoc){
