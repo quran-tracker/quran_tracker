@@ -1350,7 +1350,10 @@ function makeProgressRing(pct){
 }
 
 
+let _loadMyGroupsRunId = 0;
+
 async function loadMyGroups(){
+  const runId = ++_loadMyGroupsRunId;
   if(!currentUser){
     myGroupsListEl.innerHTML = "";
     myGroupsEmptyEl.style.display = "block";
@@ -1393,9 +1396,14 @@ async function loadMyGroups(){
   }
 
   if(groups.length === 0){
+    if(runId !== _loadMyGroupsRunId) return;
     myGroupsEmptyEl.style.display = "block";
     return;
   }
+
+  if(runId !== _loadMyGroupsRunId) return;
+  myGroupsListEl.innerHTML = "";
+  myGroupsEmptyEl.style.display = "none";
 
   // Sort newest first by joinedAt/createdAt
   groups.sort((a,b)=>{
@@ -1593,12 +1601,14 @@ const members=[];
       const m=d.data()||{};
       const ps = m.progressSummary || null;
       const memPct = (ps && typeof ps.avgMem !== "undefined") ? Number(ps.avgMem) : null;
+      const fixPct = (ps && typeof ps.avgFix !== "undefined") ? Number(ps.avgFix) : null;
 
       members.push({
         uid:d.id,
         name:(m.displayName||"").trim() || (m.email? m.email.split("@")[0] : "عضوة"),
         parts: Array.isArray(m.selectedParts)? m.selectedParts : [],
-        memPct: (Number.isFinite(memPct) ? memPct : null)
+        memPct: (Number.isFinite(memPct) ? memPct : null),
+        fixPct: (Number.isFinite(fixPct) ? fixPct : null)
       });
     });
 
@@ -1612,6 +1622,9 @@ const members=[];
 
     members.forEach((m, idx) => {
       let subTxt = m.parts.length ? `الأجزاء: ${m.parts.join("، ")}` : "لم تختَر أجزاء بعد";
+      if(m.fixPct !== null && m.fixPct !== undefined){
+        subTxt += ` • تثبيت: ${m.fixPct}%`;
+      }
       const ring = makeProgressRing(m.memPct);
       const row = itemRow({ title: m.name + (m.uid===currentUser?.uid ? " (أنتِ)" : ""), sub: subTxt, right: ring });
 
@@ -1707,6 +1720,7 @@ function closePartsModal(){
 }
 
 let _memberPreviewToken = 0;
+let __memberPartsUnsub = null;
 function escHtml(s){
   return String(s ?? "").replace(/[&<>"']/g, (c)=>({
     "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
@@ -1817,84 +1831,70 @@ async function showMemberParts(name, parts, memberUid){
   }
 
   
-// Read member public progress summary from:
+// Live read member public progress summary from:
 // groups/{groupId}/members/{uid}  (safe to read for signed-in users)
-let memberMem = null;
-try{
-  if(activeGroupId && memberUid){
-    const snap = await getDoc(doc(db, "groups", activeGroupId, "members", memberUid));
-    if(snap.exists()) memberMem = snap.data();
-  }
-}catch(e){
-  console.warn("[memberProgress] cannot read member summary for", memberUid, e);
-  memberMem = null;
-}
+try{ __memberPartsUnsub && __memberPartsUnsub(); }catch(e){}
+__memberPartsUnsub = null;
 
-if(token !== _memberPreviewToken) return;
-
-// Build UI
-const header = document.createElement("div");
-header.style.marginBottom = "12px";
-
-const sum = memberMem?.progressSummary || null;
-const per = memberMem?.partProgress || null;
-
-if(!sum || !per){
-  // Fallback: show parts only (still useful)
-  header.innerHTML = `<div class='tag' style='text-align:right'>الأجزاء: ${escHtml(p.join("، "))}</div>`;
-  memberPartsBodyEl.innerHTML = "";
-  memberPartsBodyEl.appendChild(header);
-  memberPartsBodyEl.insertAdjacentHTML("beforeend",
-    `<div class='muted' style='margin-top:10px;line-height:1.8'>ملاحظة: لم يتم نشر ملخّص التقدّم لهذه العضوة بعد. يظهر تلقائيًا بعد قبولها الدعوة للمجموعة أو بعد حفظ اختيار الأجزاء.</div>`
-  );
+if(!activeGroupId || !memberUid){
+  if(token !== _memberPreviewToken) return;
+  memberPartsBodyEl.innerHTML = "<div class='muted'>تعذر تحميل بيانات العضوة.</div>";
   return;
 }
 
+const memRef = doc(db, "groups", activeGroupId, "members", memberUid);
 
-// Use the published summary (no need to read private quranTrackers)
-const doneCount = Number(sum.done || 0);
-const avgMem = Number(sum.avgMem || 0);
-const avgFix = Number(sum.avgFix || 0);
-const pct = Number(sum.pct || 0);
+const renderNow = (memberMem)=>{
+  // Build UI
+  const header = document.createElement("div");
+  header.style.marginBottom = "12px";
+  
+  const sum = memberMem?.progressSummary || null;
+  const per = memberMem?.partProgress || null;
+  
+  if(!sum || !per){
+    // Fallback: show parts only (still useful)
+    header.innerHTML = `<div class='tag' style='text-align:right'>الأجزاء: ${escHtml(p.join("، "))}</div>`;
+    memberPartsBodyEl.innerHTML = "";
+    memberPartsBodyEl.appendChild(header);
+    memberPartsBodyEl.insertAdjacentHTML("beforeend",
+      `<div class='muted' style='margin-top:10px;line-height:1.8'>ملاحظة: لم يتم نشر ملخّص التقدّم لهذه العضوة بعد. يظهر تلقائيًا بعد قبولها الدعوة للمجموعة أو بعد حفظ اختيار الأجزاء.</div>`
+    );
+    return;
+  }
+  
+  
+  // Use the published summary (no need to read private quranTrackers)
+  const doneCount = Number(sum.done || 0);
+  const avgMem = Number(sum.avgMem || 0);
+  const avgFix = Number(sum.avgFix || 0);
+  const pct = Number(sum.pct || 0);
+  
+  const rows = [];
+  for(const partNum of p){
+    const pp = per[String(partNum)] || {};
+    const pr = { حفظPct: Number(pp.memPct||0), تثبيتPct: Number(pp.fixPct||0), done: !!pp.done };
+    rows.push({ partNum, pr });
 
-const rows = [];
-for(const partNum of p){
-  const pp = per[String(partNum)] || {};
-  const pr = { حفظPct: Number(pp.memPct||0), تثبيتPct: Number(pp.fixPct||0), done: !!pp.done };
-  rows.push({ partNum, pr });
-}
+};
 
-header.innerHTML = `
-  <div class='row' style='margin-top:0'>
-    <div class='tag' style='text-align:right'>مكتمل: ${doneCount} / ${p.length} (${pct}%)</div>
-    <div class='tag' style='text-align:right'>متوسط  ${avgMem}% • متوسط التثبيت: ${avgFix}%</div>
-  </div>
-`;
+__memberPartsUnsub = onSnapshot(memRef, (snap)=>{
+  if(token !== _memberPreviewToken) return;
+  const memberMem = snap.exists() ? (snap.data()||{}) : null;
+  renderNow(memberMem);
+}, (err)=>{
+  console.error(err);
+  if(token !== _memberPreviewToken) return;
+  memberPartsBodyEl.innerHTML = "<div class='muted'>تعذر تحميل بيانات العضوة.</div>";
+});
 
-const list = document.createElement("div");
-  list.style.display = "grid";
-  list.style.gap = "10px";
-
-  rows.forEach(({partNum, pr})=>{
-    const r = PART_RANGES[String(partNum)];
-    const box = document.createElement("div");
-    box.className = "panel";
-    box.style.padding = "12px";
-    box.innerHTML = `
-      <div style='display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap'>
-        <div style='font-weight:900'>الجزء ${partNum}</div>
-        <div class='tag'>صفحات ${r.start}–${r.end}</div>
-      </div>
-      <div class='muted' style='margin-top:6px'> <b>${pr.حفظPct}%</b> • تثبيت: <b>${pr.تثبيتPct}%</b> ${pr.done ? "• <b>مكتمل ✅</b>" : ""}</div>
-    `;
-    list.appendChild(box);
-  });
-
-  memberPartsBodyEl.innerHTML = "";
-  memberPartsBodyEl.appendChild(header);
-  memberPartsBodyEl.appendChild(list);
+return;
+rtsBodyEl.appendChild(list);
 }
 function closeMemberParts(){
+  try{ __memberPartsUnsub && __memberPartsUnsub(); }catch(e){}
+  __memberPartsUnsub = null;
+  _memberPreviewToken++; // cancel in-flight renders
   memberPartsOverlayEl.classList.add("hide");
 }
 
@@ -2250,7 +2250,9 @@ async function sendInvite(){
   }
   async function saveUserDoc(userDoc){
     const ref = doc(db, "quranTrackers", uid);
-    await setDoc(ref, userDoc, { merge:true });
+    // keep a last-updated timestamp and sync progress summaries to all groups
+    await setDoc(ref, { ...userDoc, updatedAt: serverTimestamp() }, { merge:true });
+    try{ scheduleProgressSync(userDoc); }catch(e){}
   }
 
   function setGreeting(userDoc){
