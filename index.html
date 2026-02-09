@@ -830,6 +830,16 @@ window.addEventListener('unhandledrejection', (e)=>{
 };
   const PART_RANGES = {"1": {"start": 1, "end": 21}, "2": {"start": 22, "end": 41}, "3": {"start": 42, "end": 61}, "4": {"start": 62, "end": 81}, "5": {"start": 82, "end": 101}, "6": {"start": 102, "end": 121}, "7": {"start": 122, "end": 141}, "8": {"start": 142, "end": 161}, "9": {"start": 162, "end": 181}, "10": {"start": 182, "end": 201}, "11": {"start": 202, "end": 221}, "12": {"start": 222, "end": 241}, "13": {"start": 242, "end": 261}, "14": {"start": 262, "end": 281}, "15": {"start": 282, "end": 301}, "16": {"start": 302, "end": 321}, "17": {"start": 322, "end": 341}, "18": {"start": 342, "end": 361}, "19": {"start": 362, "end": 381}, "20": {"start": 382, "end": 401}, "21": {"start": 402, "end": 421}, "22": {"start": 422, "end": 441}, "23": {"start": 442, "end": 461}, "24": {"start": 462, "end": 481}, "25": {"start": 482, "end": 501}, "26": {"start": 502, "end": 521}, "27": {"start": 522, "end": 541}, "28": {"start": 542, "end": 561}, "29": {"start": 562, "end": 581}, "30": {"start": 582, "end": 604}};
 
+  // Compatibility helper (older code used partRanges(partNum))
+  function partRanges(partNum){
+    const key = String(partNum);
+    if (typeof PART_RANGES !== 'undefined' && PART_RANGES[key]) return PART_RANGES[key];
+    const n = Number(partNum);
+    if (!n || n < 1) return { start: "-", end: "-" };
+    const start = (n - 1) * 20 + 1;
+    const end = Math.min(n * 20, 604);
+    return { start, end };
+  }
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
   import {getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail , setPersistence , browserLocalPersistence} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
   import {getFirestore, doc, getDoc, setDoc, collection, addDoc, updateDoc, deleteDoc, serverTimestamp, query, where, getDocs, onSnapshot, orderBy , writeBatch} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
@@ -1750,70 +1760,92 @@ function scheduleProgressSync(userDoc){
 }
 /* ========= end member progress sync ========= */
 
-let _memberPreviewUnsub = null;
+async function showMemberParts(name, parts, memberUid){
+  const token = ++_memberPreviewToken;
+  const p = Array.isArray(parts) ? parts.slice().sort((a,b)=>a-b) : [];
 
-function partRanges(partNum){
-  const n = Number(partNum) || 1;
-  const start = (n - 1) * 20 + 1;
-  const end = Math.min(n * 20, 604);
-  return { start, end };
-}
+  memberPartsTitleEl.textContent = `تقدّم ${name}`;
+  memberPartsSubtitleEl.textContent = p.length ? `الأجزاء المختارة: ${p.length}` : "لم تختر أجزاء بعد";
+  memberPartsBodyEl.innerHTML = "<div class='muted'>... جاري التحميل</div>";
+  memberPartsOverlayEl.classList.remove("hide");
 
-function renderMemberPartsUI(name, partsArr, memberMem){
-  const p = Array.isArray(partsArr) ? partsArr.slice().sort((a,b)=>a-b) : [];
-
-  const header = document.createElement("div");
-  header.style.marginBottom = "12px";
-
-  const sum = memberMem?.progressSummary || null;
-  const per = memberMem?.partProgress || null;
-
-  if(!sum || !per){
-    header.innerHTML = `<div class='tag' style='text-align:right'>الأجزاء: ${escHtml(p.join("، "))}</div>`;
-    memberPartsBodyEl.innerHTML = "";
-    memberPartsBodyEl.appendChild(header);
-    memberPartsBodyEl.insertAdjacentHTML("beforeend",
-      `<div class='muted' style='margin-top:10px;line-height:1.8'>ملاحظة: لم يتم نشر ملخّص التقدّم لهذه العضوة بعد. يظهر تلقائيًا بعد قبولها الدعوة للمجموعة أو بعد تحديثها للتقدّم.</div>`
-    );
+  // If no parts, nothing else to compute
+  if(!p.length){
+    if(token !== _memberPreviewToken) return;
+    memberPartsBodyEl.innerHTML = "<div class='muted' style='font-size:14px;line-height:1.8'>لا يوجد اختيارات حتى الآن.</div>";
     return;
   }
 
-  const doneCount = Number(sum.done || 0);
-  const avgMem = Number(sum.avgMem || 0);
-  const avgFix = Number(sum.avgFix || 0);
-  const pct = Number(sum.pct || 0);
-
-  const rows = [];
-  for(const partNumRaw of p){
-    const key = String(partNumRaw);
-    const pp = per[key] || {};
-    const partNum = Number(partNumRaw) || partNumRaw;
-    const pr = { memPct: Number(pp.memPct||0), fixPct: Number(pp.fixPct||0), done: !!pp.done };
-    rows.push({ partNum, key, pr });
+  
+// Read member public progress summary from:
+// groups/{groupId}/members/{uid}  (safe to read for signed-in users)
+let memberMem = null;
+try{
+  if(activeGroupId && memberUid){
+    const snap = await getDoc(doc(db, "groups", activeGroupId, "members", memberUid));
+    if(snap.exists()) memberMem = snap.data();
   }
+}catch(e){
+  console.warn("[memberProgress] cannot read member summary for", memberUid, e);
+  memberMem = null;
+}
 
-  header.innerHTML = `
-    <div class='row' style='margin-top:0'>
-      <div class='tag' style='text-align:right'>مكتمل: ${doneCount} / ${p.length} (${pct}%)</div>
-      <div class='tag' style='text-align:right'>متوسط الحفظ: ${avgMem}% • متوسط التثبيت: ${avgFix}%</div>
-    </div>
-  `;
+if(token !== _memberPreviewToken) return;
 
-  const list = document.createElement("div");
+// Build UI
+const header = document.createElement("div");
+header.style.marginBottom = "12px";
+
+const sum = memberMem?.progressSummary || null;
+const per = memberMem?.partProgress || null;
+
+if(!sum || !per){
+  // Fallback: show parts only (still useful)
+  header.innerHTML = `<div class='tag' style='text-align:right'>الأجزاء: ${escHtml(p.join("، "))}</div>`;
+  memberPartsBodyEl.innerHTML = "";
+  memberPartsBodyEl.appendChild(header);
+  memberPartsBodyEl.insertAdjacentHTML("beforeend",
+    `<div class='muted' style='margin-top:10px;line-height:1.8'>ملاحظة: لم يتم نشر ملخّص التقدّم لهذه العضوة بعد. يظهر تلقائيًا بعد قبولها الدعوة للمجموعة أو بعد حفظ اختيار الأجزاء.</div>`
+  );
+  return;
+}
+
+
+// Use the published summary (no need to read private quranTrackers)
+const doneCount = Number(sum.done || 0);
+const avgMem = Number(sum.avgMem || 0);
+const avgFix = Number(sum.avgFix || 0);
+const pct = Number(sum.pct || 0);
+
+const rows = [];
+for(const partNum of p){
+  const pp = per[String(partNum)] || {};
+  const pr = { حفظPct: Number(pp.memPct||0), تثبيتPct: Number(pp.fixPct||0), done: !!pp.done };
+  rows.push({ partNum, pr });
+}
+
+header.innerHTML = `
+  <div class='row' style='margin-top:0'>
+    <div class='tag' style='text-align:right'>مكتمل: ${doneCount} / ${p.length} (${pct}%)</div>
+    <div class='tag' style='text-align:right'>متوسط  ${avgMem}% • متوسط التثبيت: ${avgFix}%</div>
+  </div>
+`;
+
+const list = document.createElement("div");
   list.style.display = "grid";
   list.style.gap = "10px";
 
-  rows.forEach(({partNum, key, pr})=>{
-    const r = (typeof PART_RANGES !== "undefined" && PART_RANGES && PART_RANGES[key]) ? PART_RANGES[key] : partRanges(partNum);
+  rows.forEach(({partNum, pr})=>{
+    const r = PART_RANGES[String(partNum)];
     const box = document.createElement("div");
     box.className = "panel";
     box.style.padding = "12px";
     box.innerHTML = `
       <div style='display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap'>
-        <div style='font-weight:900'>الجزء ${escHtml(String(partNum))}</div>
+        <div style='font-weight:900'>الجزء ${partNum}</div>
         <div class='tag'>صفحات ${r.start}–${r.end}</div>
       </div>
-      <div class='muted' style='margin-top:6px'>حفظ: <b>${pr.memPct}%</b> • تثبيت: <b>${pr.fixPct}%</b> ${pr.done ? "• <b>مكتمل ✅</b>" : ""}</div>
+      <div class='muted' style='margin-top:6px'> <b>${pr.حفظPct}%</b> • تثبيت: <b>${pr.تثبيتPct}%</b> ${pr.done ? "• <b>مكتمل ✅</b>" : ""}</div>
     `;
     list.appendChild(box);
   });
@@ -1822,63 +1854,10 @@ function renderMemberPartsUI(name, partsArr, memberMem){
   memberPartsBodyEl.appendChild(header);
   memberPartsBodyEl.appendChild(list);
 }
-
-async function showMemberParts(name, parts, memberUid){
-  const token = ++_memberPreviewToken;
-
-  // cleanup previous live listener
-  try{ if(_memberPreviewUnsub){ _memberPreviewUnsub(); _memberPreviewUnsub=null; } }catch(e){}
-
-  const p = Array.isArray(parts) ? parts.slice().sort((a,b)=>a-b) : [];
-
-  memberPartsTitleEl.textContent = `تقدّم ${name}`;
-  memberPartsSubtitleEl.textContent = p.length ? `الأجزاء المختارة: ${p.length}` : "لم تختر أجزاء بعد";
-  memberPartsBodyEl.innerHTML = "<div class='muted'>... جاري التحميل</div>";
-  memberPartsOverlayEl.classList.remove("hide");
-
-  if(!p.length){
-    memberPartsBodyEl.innerHTML = "<div class='muted' style='font-size:14px;line-height:1.8'>لا يوجد اختيارات حتى الآن.</div>";
-    return;
-  }
-
-  // Live read member progress summary from groups/{groupId}/members/{uid}
-  if(activeGroupId && memberUid){
-    try{
-      const ref = doc(db, "groups", activeGroupId, "members", memberUid);
-      _memberPreviewUnsub = onSnapshot(ref, (snap)=>{
-        if(token !== _memberPreviewToken) return;
-        const data = snap.exists() ? snap.data() : null;
-        renderMemberPartsUI(name, p, data);
-      }, (err)=>{
-        console.warn("[memberProgress] onSnapshot failed", err);
-        if(token !== _memberPreviewToken) return;
-        renderMemberPartsUI(name, p, null);
-      });
-
-      // quick fallback if snapshot is slow
-      setTimeout(()=>{
-        if(token !== _memberPreviewToken) return;
-        if(memberPartsBodyEl.innerHTML.includes("جاري التحميل")){
-          renderMemberPartsUI(name, p, null);
-        }
-      }, 1200);
-
-      return;
-    }catch(e){
-      console.warn("[memberProgress] cannot subscribe", e);
-      if(token !== _memberPreviewToken) return;
-      renderMemberPartsUI(name, p, null);
-      return;
-    }
-  }
-
-  renderMemberPartsUI(name, p, null);
-}
-
 function closeMemberParts(){
   memberPartsOverlayEl.classList.add("hide");
-  try{ if(_memberPreviewUnsub){ _memberPreviewUnsub(); _memberPreviewUnsub=null; } }catch(e){}
 }
+
 function updateMyPartsSummary(){
   if(!myPartsSummaryTextEl) return;
   const p = Array.isArray(pickedParts) ? pickedParts : [];
