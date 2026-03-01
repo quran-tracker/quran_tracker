@@ -1862,3 +1862,47 @@ function bindDashNav(){
 
 // bind once after module loads
 bindDashNav();
+
+
+// =============================
+// View lifecycle (prevents duplicated listeners)
+// nav.js calls window.__viewLifecycle.enter/leave
+// =============================
+function __cleanupGroupsView(){
+  // Groups view uses the incoming invites listeners
+  try{ stopInviteListeners(); }catch(e){}
+}
+
+function __cleanupGroupView(){
+  // Group details view uses members + group-invites + sent-invites listeners
+  try{ if(membersUnsub) membersUnsub(); }catch(e){}
+  membersUnsub = null;
+  try{ stopInviteListeners(); }catch(e){}
+}
+
+window.__viewLifecycle = {
+  enter: async (which)=>{
+    // Note: avoid throwing from here; nav should stay responsive.
+    try{
+      if(which === 'groups'){
+        if(!currentUser){ pendingGroupsLoad = true; return; }
+        pendingGroupsLoad = false;
+        await loadMyInvites();
+        await loadMyGroups();
+      }
+      if(which === 'group'){
+        if(activeGroupId) await loadGroupPage();
+      }
+      // create/my: no special listeners here
+    }catch(e){ console.error('enter view error', which, e); }
+  },
+  leave: (which)=>{
+    try{
+      if(which === 'groups') __cleanupGroupsView();
+      if(which === 'group') __cleanupGroupView();
+      if(which === 'create') { /* nothing for now */ }
+      // my: nothing
+    }catch(e){ console.error('leave view error', which, e); }
+  }
+};
+

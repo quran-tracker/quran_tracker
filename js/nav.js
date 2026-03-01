@@ -36,7 +36,19 @@ window.addEventListener('DOMContentLoaded', ()=>{
       bottomSheet?.setAttribute("aria-hidden","false");
     }
 
+    let _currentView = null;
+
+    function callLeave(prev){
+      try{ window.__viewLifecycle?.leave?.(prev); }catch(e){ console.error('view leave error', e); }
+    }
+    function callEnter(next){
+      try{ window.__viewLifecycle?.enter?.(next); }catch(e){ console.error('view enter error', e); }
+    }
+
     function setActive(which){
+      const prev = _currentView || (localStorage.getItem("activeView") || "my");
+      if(prev && prev !== which){ callLeave(prev); }
+
       // Force-hide all views (hard reset)
       Object.values(views).forEach(v=>{
         if(!v) return;
@@ -63,6 +75,9 @@ window.addEventListener('DOMContentLoaded', ()=>{
 
       closeSheet();
       localStorage.setItem("activeView", which);
+
+      _currentView = which;
+      callEnter(which);
 
       try{ window.scrollTo({ top: 0, behavior: "smooth" }); }catch(e){ window.scrollTo(0,0); }
     }
