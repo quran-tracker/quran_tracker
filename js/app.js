@@ -561,7 +561,7 @@ function renderReviewsParts(userDoc){
     card.addEventListener("click", ()=>{
       activeReviewsPart = p;
       renderReviewsPages(p, userDoc);
-      try{ reviewsClosePartBtn.style.display = "inline-flex"; }catch(e){}
+      window.__setActiveView?.("reviewsPart");
     });
 
     reviewsPartsGridEl.appendChild(card);
@@ -573,7 +573,10 @@ function renderReviewsParts(userDoc){
 
   // If we already opened a part, refresh its pages too
   if(activeReviewsPart){
-    renderReviewsPages(activeReviewsPart, userDoc);
+    // Keep the part page fresh if user returns to it
+    if((localStorage.getItem("activeView")||"") === "reviewsPart"){
+      renderReviewsPages(activeReviewsPart, userDoc);
+    }
   }
 }
 
@@ -623,8 +626,6 @@ function renderReviewsPages(partNum, userDoc){
   const now = Date.now();
 
   reviewsRowsEl.innerHTML = "";
-  if(reviewsEmptyEl) reviewsEmptyEl.style.display = "none";
-  if(reviewsTableWrapEl) reviewsTableWrapEl.style.display = "block";
 
   for(const pg of pages){
     const rec = byPage[String(pg)];
@@ -712,12 +713,10 @@ const groupMembersEmptyEl = el("groupMembersEmpty");
 // Reviews view
 const reviewsPartsGridEl = el("reviewsPartsGrid");
 const reviewsRowsEl = el("reviewsRows");
-const reviewsTableWrapEl = el("reviewsTableWrap");
-const reviewsEmptyEl = el("reviewsEmpty");
 const reviewsPartTitleEl = el("reviewsPartTitle");
 const reviewsPartHintEl = el("reviewsPartHint");
-const reviewsClosePartBtn = el("reviewsClosePart");
 const reviewsOnlyFixedChk = el("reviewsOnlyFixed");
+const backToReviewsBtn = el("backToReviews");
 let activeReviewsPart = null;
 
 let activeGroupId = null;
@@ -2081,14 +2080,9 @@ bindDashNav();
 // Reviews UI bindings
 try{
   reviewsOnlyFixedChk?.addEventListener("change", async ()=>{ if(!currentUser) return; const d=(cachedDoc ?? await loadUserDoc()); renderReviewsParts(d); });
-  reviewsClosePartBtn?.addEventListener("click", ()=>{
-    activeReviewsPart = null;
-    if(reviewsPartTitleEl) reviewsPartTitleEl.textContent = "اختاري جزء لعرض صفحاته";
-    if(reviewsPartHintEl) reviewsPartHintEl.textContent = "";
-    if(reviewsRowsEl) reviewsRowsEl.innerHTML = "";
-    if(reviewsTableWrapEl) reviewsTableWrapEl.style.display = "none";
-    if(reviewsEmptyEl) reviewsEmptyEl.style.display = "block";
-    if(reviewsClosePartBtn) reviewsClosePartBtn.style.display = "none";
+  backToReviewsBtn?.addEventListener("click", ()=>{
+    window.__setActiveView?.("reviews");
+    try{ window.scrollTo({ top: 0, behavior: "smooth" }); }catch(e){ window.scrollTo(0,0); }
   });
 }catch(e){}
 
@@ -2124,6 +2118,16 @@ window.__viewLifecycle = {
       }
       if(which === 'reviews'){
         await loadReviewsView();
+      }
+      if(which === 'reviewsPart'){
+        if(!currentUser){ return; }
+        const userDoc = (cachedDoc ?? await loadUserDoc());
+        if(!activeReviewsPart){
+          // Safety: if user landed here without choosing part
+          window.__setActiveView?.('reviews');
+          return;
+        }
+        renderReviewsPages(activeReviewsPart, userDoc);
       }
       // create/my: no special listeners here
     }catch(e){ console.error('enter view error', which, e); }

@@ -14,6 +14,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
       group: document.getElementById("viewGroup"),
       create: document.getElementById("viewCreate"),
       reviews: document.getElementById("viewReviews"),
+      reviewsPart: document.getElementById("viewReviewsPart"),
     };
 
     const m = {
@@ -70,12 +71,13 @@ window.addEventListener('DOMContentLoaded', ()=>{
       Object.values(btns).forEach(b=>b && b.classList.remove("active"));
       if(btns[which]) btns[which].classList.add("active");
       if((which==="group" || which==="create") && btns.groups) btns.groups.classList.add("active");
+      if(which==="reviewsPart" && btns.reviews) btns.reviews.classList.add("active");
 
       // Mobile nav active
       Object.values(m).forEach(b=>b && b.classList.remove("active"));
       if(which==="my" && m.my) m.my.classList.add("active");
       if((which==="groups" || which==="group" || which==="create") && m.groups) m.groups.classList.add("active");
-      if(which==="reviews" && m.reviews) m.reviews.classList.add("active");
+      if((which==="reviews" || which==="reviewsPart") && m.reviews) m.reviews.classList.add("active");
 
       closeSheet();
       localStorage.setItem("activeView", which);

@@ -575,33 +575,33 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
     </div>
     <div class="cardBd">
       <div id="reviewsPartsGrid" class="partsGrid"></div>
+    </div>
+  </div>
+</section>
 
-      <div class="card" style="margin-top:14px">
-        <div class="cardHd">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-            <div>
-              <div style="font-weight:900" id="reviewsPartTitle">اختاري جزء لعرض صفحاته</div>
-              <div class="muted mini" id="reviewsPartHint"></div>
-            </div>
-            <button class="btn btnGhost btnSmall" id="reviewsClosePart" type="button" style="width:auto;display:none">إغلاق</button>
-          </div>
+<section class="view" id="viewReviewsPart">
+  <div class="card">
+    <div class="cardHd">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div>
+          <h2 style="margin:0" id="reviewsPartTitle">📖 مراجعات الجزء</h2>
+          <div class="muted" id="reviewsPartHint">...</div>
         </div>
-        <div class="cardBd" id="reviewsPagesBox">
-          <div class="muted" id="reviewsEmpty">لا يوجد عرض حالياً.</div>
-
-          <div class="tableWrap" id="reviewsTableWrap" style="display:none">
-            <table>
-              <thead>
-                <tr>
-                  <th style="min-width:110px">رقم الصفحة</th>
-                  <th style="min-width:220px">آخر مراجعة</th>
-                  <th style="min-width:140px">تسجيل</th>
-                </tr>
-              </thead>
-              <tbody id="reviewsRows"></tbody>
-            </table>
-          </div>
-        </div>
+        <button class="btn btnGhost" id="backToReviews" type="button">رجوع</button>
+      </div>
+    </div>
+    <div class="cardBd">
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:110px">رقم الصفحة</th>
+              <th style="min-width:220px">آخر مراجعة</th>
+              <th style="min-width:140px">تسجيل</th>
+            </tr>
+          </thead>
+          <tbody id="reviewsRows"></tbody>
+        </table>
       </div>
     </div>
   </div>
