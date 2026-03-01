@@ -67,6 +67,57 @@ window.addEventListener('unhandledrejection', (e)=>{
   window.__toastT = setTimeout(()=>toastEl.classList.remove("show"), 2600);
 }
 
+// --- Reviews helpers ---
+function __daysBetween(nowMs, thenMs){
+  const diff = Math.max(0, nowMs - thenMs);
+  return Math.floor(diff / (1000*60*60*24));
+}
+function __tsToMs(v){
+  if(!v) return null;
+  if(typeof v === "number") return v;
+  if(typeof v === "string"){
+    const t = Date.parse(v);
+    return Number.isFinite(t) ? t : null;
+  }
+  // Firestore Timestamp {seconds, nanoseconds}
+  if(typeof v === "object" && typeof v.seconds === "number"){
+    return (v.seconds*1000) + Math.floor((v.nanoseconds||0)/1e6);
+  }
+  if(v instanceof Date) return v.getTime();
+  return null;
+}
+function __formatAgo(days){
+  if(days === null) return "لم تُراجع بعد";
+  if(days === 0) return "اليوم";
+  if(days === 1) return "قبل يوم";
+  return `قبل ${days} أيام`;
+}
+function __getReviewsByPage(userDoc){
+  return (userDoc && userDoc.reviews && userDoc.reviews.byPage && typeof userDoc.reviews.byPage === "object") ? userDoc.reviews.byPage : {};
+}
+function __partReviewMaxAgeDays(partNum, userDoc){
+  const pages = pagesForPart(partNum);
+  const byPage = __getReviewsByPage(userDoc);
+  const now = Date.now();
+  let maxDays = 0;
+  let hasMissing = false;
+  for(const pg of pages){
+    const rec = byPage[String(pg)];
+    const ms = __tsToMs(rec && rec.lastReviewedAt);
+    if(ms === null){ hasMissing = true; continue; }
+    const d = __daysBetween(now, ms);
+    if(d > maxDays) maxDays = d;
+  }
+  if(hasMissing) return 9999;
+  return maxDays;
+}
+function __partReviewClass(maxDays){
+  if(maxDays > 14) return "staleHot";
+  if(maxDays > 7) return "staleWarn";
+  return "";
+}
+
+
   const toast = (title, msg)=> showToast((msg || title || "").toString());
 
   window.addEventListener('error', (e)=>{ try{ showToast('خطأ: ' + (e.message||'')); }catch(_){} });
@@ -468,6 +519,156 @@ function stopInviteListeners(){
   __invitesUnsub1 = __invitesUnsub2 = __sentInvitesUnsub = __groupInvitesUnsub = null;
 }
 
+// =============================
+// Reviews View
+// =============================
+function __applyReviewsPartCardEl(cardEl, partNum, userDoc){
+  if(!cardEl) return;
+  const maxDays = __partReviewMaxAgeDays(partNum, userDoc);
+  cardEl.classList.remove("staleWarn","staleHot");
+  const cls = __partReviewClass(maxDays);
+  if(cls) cardEl.classList.add(cls);
+}
+
+function renderReviewsParts(userDoc){
+  if(!reviewsPartsGridEl) return;
+
+  const onlyFixed = !!(reviewsOnlyFixedChk && reviewsOnlyFixedChk.checked);
+  const statsByPart = (userDoc && userDoc.stats && userDoc.stats.byPart) ? userDoc.stats.byPart : {};
+
+  reviewsPartsGridEl.innerHTML = "";
+  for(let p=1; p<=30; p++){
+    const st = statsByPart[String(p)] || {};
+    if(onlyFixed && Number(st.fixPct||0) < 100) continue;
+
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = "partCard";
+    card.dataset.part = String(p);
+
+    const pr = partRanges(p);
+    const maxDays = __partReviewMaxAgeDays(p, userDoc);
+    const label = (maxDays === 9999) ? "يوجد صفحات لم تُراجع بعد" : `أقدم مراجعة: ${__formatAgo(maxDays)}`;
+
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="font-weight:900">الجزء ${p}</div>
+        <div class="mini muted">ص ${pr.start}–${pr.end}</div>
+      </div>
+      <div class="mini muted" style="margin-top:8px">${label}</div>
+    `;
+
+    __applyReviewsPartCardEl(card, p, userDoc);
+
+    card.addEventListener("click", ()=>{
+      activeReviewsPart = p;
+      renderReviewsPages(p, userDoc);
+      try{ reviewsClosePartBtn.style.display = "inline-flex"; }catch(e){}
+    });
+
+    reviewsPartsGridEl.appendChild(card);
+  }
+
+  if(!reviewsPartsGridEl.children.length){
+    reviewsPartsGridEl.innerHTML = `<div class="muted">لا يوجد أجزاء مطابقة للفلتر الحالي.</div>`;
+  }
+
+  // If we already opened a part, refresh its pages too
+  if(activeReviewsPart){
+    renderReviewsPages(activeReviewsPart, userDoc);
+  }
+}
+
+async function markPageReviewed(pageNum){
+  if(!currentUser) return;
+  const pg = normalizePage(pageNum);
+  if(!pg) return;
+
+  const ref = doc(db, "quranTrackers", currentUser.uid);
+  const field = `reviews.byPage.${pg}.lastReviewedAt`;
+  try{
+    await updateDoc(ref, {
+      [field]: serverTimestamp(),
+      "reviews.updatedAt": serverTimestamp(),
+    });
+
+    // Update cache immediately for UI responsiveness
+    const now = Date.now();
+    cachedDoc = cachedDoc || {};
+    cachedDoc.reviews = cachedDoc.reviews || {};
+    cachedDoc.reviews.byPage = cachedDoc.reviews.byPage || {};
+    cachedDoc.reviews.byPage[String(pg)] = cachedDoc.reviews.byPage[String(pg)] || {};
+    cachedDoc.reviews.byPage[String(pg)].lastReviewedAt = now;
+
+    // Re-render current view
+    const fresh = cachedDoc;
+    renderReviewsParts(fresh);
+    if(activeReviewsPart) renderReviewsPages(activeReviewsPart, fresh);
+    toast("تم", `تم تسجيل مراجعة صفحة ${pg} ✅`);
+  }catch(e){
+    console.error(e);
+    toast("خطأ", "تعذر حفظ المراجعة. تأكدي من الاتصال.");
+  }
+}
+
+function renderReviewsPages(partNum, userDoc){
+  if(!reviewsPagesListEl || !reviewsPartTitleEl || !reviewsPartHintEl) return;
+  const p = Number(partNum);
+  if(!p){ return; }
+
+  const pr = partRanges(p);
+  reviewsPartTitleEl.textContent = `صفحات الجزء ${p}`;
+  reviewsPartHintEl.textContent = `من صفحة ${pr.start} إلى ${pr.end}`;
+
+  const pages = pagesForPart(p);
+  const byPage = __getReviewsByPage(userDoc);
+  const now = Date.now();
+
+  reviewsPagesListEl.innerHTML = "";
+  if(reviewsEmptyEl) reviewsEmptyEl.style.display = "none";
+
+  for(const pg of pages){
+    const rec = byPage[String(pg)];
+    const ms = __tsToMs(rec && rec.lastReviewedAt);
+    const days = (ms === null) ? null : __daysBetween(now, ms);
+
+    const row = document.createElement("div");
+    row.className = "reviewRow";
+
+    row.innerHTML = `
+      <div class="left">
+        <div class="title">صفحة ${pg}</div>
+        <div class="meta">آخر مراجعة: ${__formatAgo(days)}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btnSmall btnPrimary" type="button" data-act="review">راجعت ✅</button>
+      </div>
+    `;
+
+    row.querySelector('[data-act="review"]')?.addEventListener("click", ()=>markPageReviewed(pg));
+    reviewsPagesListEl.appendChild(row);
+  }
+
+  // Update part card coloring if the pages changed
+  if(reviewsPartsGridEl){
+    const card = reviewsPartsGridEl.querySelector(`[data-part="${p}"]`);
+    if(card) __applyReviewsPartCardEl(card, p, userDoc);
+  }
+}
+
+async function loadReviewsView(){
+  if(!currentUser) return;
+  try{
+    const userDoc = (cachedDoc ?? await loadUserDoc());
+    renderReviewsParts(userDoc);
+  }catch(e){
+    console.error(e);
+    toast("خطأ", "تعذر تحميل المراجعات.");
+  }
+}
+
+
+
 function __scheduleRenderInvites(renderFn){
   // Small debounce because we may merge two snapshots (back-compat queries)
   if(__renderInvitesTimer) clearTimeout(__renderInvitesTimer);
@@ -513,6 +714,16 @@ const groupInvitesEmptyEl = el("groupInvitesEmpty");
 
 const groupMembersListEl = el("groupMembersList");
 const groupMembersEmptyEl = el("groupMembersEmpty");
+
+// Reviews view
+const reviewsPartsGridEl = el("reviewsPartsGrid");
+const reviewsPagesListEl = el("reviewsPagesList");
+const reviewsEmptyEl = el("reviewsEmpty");
+const reviewsPartTitleEl = el("reviewsPartTitle");
+const reviewsPartHintEl = el("reviewsPartHint");
+const reviewsClosePartBtn = el("reviewsClosePart");
+const reviewsOnlyFixedChk = el("reviewsOnlyFixed");
+let activeReviewsPart = null;
 
 let activeGroupId = null;
 let activeGroupGoalN = null;
@@ -1863,6 +2074,19 @@ function bindDashNav(){
 // bind once after module loads
 bindDashNav();
 
+// Reviews UI bindings
+try{
+  reviewsOnlyFixedChk?.addEventListener("change", async ()=>{ if(!currentUser) return; const d=(cachedDoc ?? await loadUserDoc()); renderReviewsParts(d); });
+  reviewsClosePartBtn?.addEventListener("click", ()=>{
+    activeReviewsPart = null;
+    if(reviewsPartTitleEl) reviewsPartTitleEl.textContent = "اختاري جزء لعرض صفحاته";
+    if(reviewsPartHintEl) reviewsPartHintEl.textContent = "";
+    if(reviewsPagesListEl) reviewsPagesListEl.innerHTML = "";
+    if(reviewsEmptyEl) reviewsEmptyEl.style.display = "block";
+    if(reviewsClosePartBtn) reviewsClosePartBtn.style.display = "none";
+  });
+}catch(e){}
+
 
 // =============================
 // View lifecycle (prevents duplicated listeners)
@@ -1892,6 +2116,9 @@ window.__viewLifecycle = {
       }
       if(which === 'group'){
         if(activeGroupId) await loadGroupPage();
+      }
+      if(which === 'reviews'){
+        await loadReviewsView();
       }
       // create/my: no special listeners here
     }catch(e){ console.error('enter view error', which, e); }

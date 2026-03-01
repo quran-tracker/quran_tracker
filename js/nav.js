@@ -5,6 +5,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
     const btns = {
       my: document.getElementById("navMy"),
       groups: document.getElementById("navGroups"),
+      reviews: document.getElementById("navReviews"),
       logout: document.getElementById("navLogout"),
     };
     const views = {
@@ -12,11 +13,13 @@ window.addEventListener('DOMContentLoaded', ()=>{
       groups: document.getElementById("viewGroups"),
       group: document.getElementById("viewGroup"),
       create: document.getElementById("viewCreate"),
+      reviews: document.getElementById("viewReviews"),
     };
 
     const m = {
       my: document.getElementById("mNavMy"),
       groups: document.getElementById("mNavGroups"),
+      reviews: document.getElementById("mNavReviews"),
       more: document.getElementById("mNavMore"),
     };
     const sheetBackdrop = document.getElementById("sheetBackdrop");
@@ -72,6 +75,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
       Object.values(m).forEach(b=>b && b.classList.remove("active"));
       if(which==="my" && m.my) m.my.classList.add("active");
       if((which==="groups" || which==="group" || which==="create") && m.groups) m.groups.classList.add("active");
+      if(which==="reviews" && m.reviews) m.reviews.classList.add("active");
 
       closeSheet();
       localStorage.setItem("activeView", which);
@@ -102,6 +106,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
     // Desktop nav handlers
     btns.my?.addEventListener("click", ()=>setActive("my"));
     btns.groups?.addEventListener("click", ()=>setActive("groups"));
+    btns.reviews?.addEventListener("click", ()=>setActive("reviews"));
     btns.logout?.addEventListener("click", ()=>{
       const b = document.getElementById("logoutBtn2") || document.getElementById("logoutBtn");
       b?.click();
@@ -110,6 +115,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
     // Mobile bottom nav handlers
     m.my?.addEventListener("click", ()=>setActive("my"));
     m.groups?.addEventListener("click", ()=>setActive("groups"));
+    m.reviews?.addEventListener("click", ()=>setActive("reviews"));
     m.more?.addEventListener("click", ()=>openSheet());
     sheetBackdrop?.addEventListener("click", closeSheet);
 
