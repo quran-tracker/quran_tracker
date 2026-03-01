@@ -95,6 +95,32 @@ function __formatAgo(days){
 function __getReviewsByPage(userDoc){
   return (userDoc && userDoc.reviews && userDoc.reviews.byPage && typeof userDoc.reviews.byPage === "object") ? userDoc.reviews.byPage : {};
 }
+
+function __isPageFullyCompleted(pg){
+  try{
+    if(!pg || !pg.tasmee3) return false;
+    const allRec = Array.isArray(pg.recite) && pg.recite.every(Boolean);
+    const allNear = Array.isArray(pg.near) && pg.near.every(Boolean);
+    const allFar = Array.isArray(pg.far) && pg.far.every(Boolean);
+    return allRec && allNear && allFar;
+  }catch(_){ return false; }
+}
+
+function __partHasAnyCompletedPage(partRaw, partNum){
+  try{
+    const part = partRaw || {};
+    const r = PART_RANGES[String(partNum)];
+    if(!r) return false;
+    const pagesObj = part.pages ?? part.pageData ?? {};
+    for(let pg=r.start; pg<=r.end; pg++){
+      const raw = pagesObj[String(pg)] || {};
+      const norm = normalizePage(raw);
+      if(__isPageFullyCompleted(norm)) return true;
+    }
+    return false;
+  }catch(_){ return false; }
+}
+
 function __partReviewMaxAgeDays(partNum, userDoc){
   const pages = pagesForPart(partNum);
   const byPage = __getReviewsByPage(userDoc);
@@ -116,28 +142,6 @@ function __partReviewClass(maxDays){
   if(maxDays > 7) return "staleWarn";
   return "";
 }
-// --- Completion helpers for reviews ---
-function __allTrue(arr){
-  return Array.isArray(arr) && arr.length && arr.every(Boolean);
-}
-// A page is "completed" when all تثبيت circles are done AND page tasmee3 is checked.
-function __isPageCompleted(rawPage){
-  const pg = normalizePage(rawPage || {});
-  return !!(pg.tasmee3 && __allTrue(pg.recite) && __allTrue(pg.near) && __allTrue(pg.far));
-}
-function __getPartPagesObj(partNum, userDoc){
-  const part = (userDoc && userDoc.parts && userDoc.parts[String(partNum)]) ? userDoc.parts[String(partNum)] : {};
-  return part.pages ?? part.pageData ?? {};
-}
-function __partHasAnyCompletedPages(partNum, userDoc){
-  const pagesObj = __getPartPagesObj(partNum, userDoc);
-  const r = partRanges(partNum);
-  for(let p=r.start; p<=r.end; p++){
-    if(__isPageCompleted(pagesObj[String(p)] || {})) return true;
-  }
-  return false;
-}
-
 
 
   const toast = (title, msg)=> showToast((msg || title || "").toString());
@@ -564,34 +568,27 @@ function renderReviewsParts(userDoc){
     const st = statsByPart[String(p)] || {};
     const memPct = Number(st.memPct||0);
     const fixPct = Number(st.fixPct||0);
-    const isPartComplete = (memPct >= 100) && (fixPct >= 100);
-
-    // Optional filter: only show parts that are تثبيت 100%
+    // Unlock part for reviews if it contains at least ONE fully completed page (tasmee3 + all circles)
+    const partRaw = (userDoc && userDoc.parts && userDoc.parts[String(p)]) ? userDoc.parts[String(p)] : null;
+    const isComplete = __partHasAnyCompletedPage(partRaw, p);
     if(onlyFixed && fixPct < 100) continue;
-
-    // NEW: allow opening a part if it has at least ONE completed page (not necessarily the whole part)
-    const hasAnyCompletedPages = __partHasAnyCompletedPages(p, userDoc);
 
     const card = document.createElement("button");
     card.type = "button";
     card.className = "partBtn";
     card.dataset.part = String(p);
 
-    if(!hasAnyCompletedPages){
+    if(!isComplete){
       card.classList.add("partLocked");
       card.disabled = true;
-      card.title = "لا يوجد صفحات مكتملة داخل هذا الجزء بعد (تسميع + تثبيت الصفحة).";
+      card.title = "لا يوجد أي صفحة مكتملة في هذا الجزء (تسميع + تثبيت كامل).";
     }
 
     const pr = partRanges(p);
-
-    // Label logic
-    const maxDays = hasAnyCompletedPages ? __partReviewMaxAgeDays(p, userDoc) : null;
+    const maxDays = __partReviewMaxAgeDays(p, userDoc);
     let label;
-    if(!hasAnyCompletedPages){
-      label = `لا يوجد صفحات مكتملة بعد • حفظ ${memPct}% • تثبيت ${fixPct}%`;
-    }else if(!isPartComplete){
-      label = `متاح للمراجعة (صفحات مكتملة) • حفظ ${memPct}% • تثبيت ${fixPct}%`;
+    if(!isComplete){
+      label = `مقفول: لا يوجد صفحات مكتملة`;
     }else{
       label = (maxDays === 9999) ? "يوجد صفحات لم تُراجع بعد" : `أقدم مراجعة: ${__formatAgo(maxDays)}`;
     }
@@ -602,25 +599,25 @@ function renderReviewsParts(userDoc){
       <div class="tag">${label}</div>
     `;
 
-    // Apply stale coloring only if the part can be opened
-    if(hasAnyCompletedPages){
-      __applyReviewsPartCardEl(card, p, userDoc);
+    __applyReviewsPartCardEl(card, p, userDoc);
 
+    if(isComplete){
       card.addEventListener("click", (ev)=>{
-        try{
-          activeReviewsPart = p;
-          window.__setActiveView?.("reviewsPart");
-          renderReviewsPages(p, userDoc);
-        }catch(err){
-          console.error("reviews part open error", err);
-          try{ window.__setActiveView?.("reviewsPart"); }catch(e){}
-          toast("خطأ", "صار خطأ بفتح صفحات الجزء. افتحي Console وابعتيلي الخطأ.");
-        }
+      try{
+        activeReviewsPart = p;
+        // Navigate first, then render (prevents render errors from blocking navigation)
+        window.__setActiveView?.("reviewsPart");
+        renderReviewsPages(p, userDoc);
+      }catch(err){
+        console.error("reviews part open error", err);
+        // Still try to navigate even if rendering fails
+        try{ window.__setActiveView?.("reviewsPart"); }catch(e){}
+        toast("خطأ", "صار خطأ بفتح صفحات الجزء. افتحي Console وابعتيلي الخطأ.");
+      }
       });
     }
 
     reviewsPartsGridEl.appendChild(card);
-  }
   }
 
   if(!reviewsPartsGridEl.children.length){
@@ -640,19 +637,6 @@ async function markPageReviewed(pageNum){
   if(!currentUser) return;
   const pg = normalizePage(pageNum);
   if(!pg) return;
-  // Do not allow marking review for a page that is not completed (تسميع + تثبيت بالكامل)
-  try{
-    const partNum = activeReviewsPart || null;
-    if(partNum){
-      const pagesObj = __getPartPagesObj(partNum, cachedDoc || {});
-      const raw = pagesObj[String(pg)] || {};
-      if(!__isPageCompleted(raw)){
-        toast("تنبيه", "لا يمكن تسجيل مراجعة لصفحة غير مكتملة (أكملي التسميع + دوائر التثبيت أولاً).");
-        return;
-      }
-    }
-  }catch(_){}
-
 
   const ref = doc(db, "quranTrackers", currentUser.uid);
   const field = `reviews.byPage.${pg}.lastReviewedAt`;
@@ -698,35 +682,28 @@ function renderReviewsPages(partNum, userDoc){
 
   for(const pg of pages){
     const rec = byPage[String(pg)];
+    const rawPage = ((((userDoc && userDoc.parts && userDoc.parts[String(p)]) ? (userDoc.parts[String(p)].pages ?? userDoc.parts[String(p)].pageData ?? {}) : {})[String(pg)]) || {});
+    const pgNorm = normalizePage(rawPage);
+    const isPageComplete = __isPageFullyCompleted(pgNorm);
     const ms = __tsToMs(rec && rec.lastReviewedAt);
     const days = (ms === null) ? null : __daysBetween(now, ms);
 
-    // Completion (from حفظ/تثبيت page data)
-    const pagesObj = __getPartPagesObj(p, userDoc);
-    const rawPage = pagesObj[String(pg)] || {};
-    const isCompleted = __isPageCompleted(rawPage);
-
     const tr = document.createElement("tr");
-    if(!isCompleted){
-      tr.classList.add("lockedRow");
-    }
     tr.innerHTML = `
       <td style="text-align:center;font-weight:900">${pg}</td>
-      <td style="text-align:center;color:var(--muted)">${isCompleted ? __formatAgo(days) : "غير مكتملة"}</td>
+      <td style="text-align:center;color:var(--muted)">${__formatAgo(days)}</td>
       <td style="text-align:center">
-        <button class="btn btnSmall btnPrimary" type="button" data-act="review" style="width:auto" ${isCompleted ? "" : "disabled"}>${isCompleted ? "راجعت ✅" : "مقفولة"}</button>
+        <button class="btn btnSmall btnPrimary" type="button" data-act="review" style="width:auto">راجعت ✅</button>
       </td>
     `;
-
     const btn = tr.querySelector('[data-act="review"]');
-    if(isCompleted){
-      btn?.addEventListener("click", ()=>markPageReviewed(pg));
+    if(!isPageComplete){
+      tr.classList.add("rowLocked");
+      if(btn){ btn.disabled = true; btn.classList.add("btnDisabled"); btn.textContent = "غير مكتملة"; }
     }else{
-      btn && (btn.title = "أكملي التسميع + دوائر التثبيت لهذه الصفحة أولاً.");
+      btn?.addEventListener("click", ()=>markPageReviewed(pg));
     }
-
     reviewsRowsEl.appendChild(tr);
-  }
   }
 
   // Update part card coloring if the pages changed

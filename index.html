@@ -349,14 +349,15 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
 .partBtn.staleWarn{ border:1px solid rgba(255, 193, 7, .45); background: rgba(255, 193, 7, .10); }
 .partBtn.staleHot{ border:1px solid rgba(220, 53, 69, .45); background: rgba(220, 53, 69, .10); }
 .reviewRow{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:14px; margin-bottom:10px; }
-/* Reviews: locked (incomplete) page rows */
-.lockedRow{ opacity:.55; }
-.lockedRow td{ filter: grayscale(30%); }
-
 .reviewRow .left{ display:flex; flex-direction:column; gap:2px; }
 .reviewRow .title{ font-weight:900; }
 .reviewRow .meta{ font-size:12px; color:var(--muted); }
 
+
+/* Reviews locking */
+.partLocked{opacity:.55; filter:grayscale(1); cursor:not-allowed;}
+.rowLocked{opacity:.6;}
+.btnDisabled{opacity:.7; cursor:not-allowed;}
 </style>
 </head>
 <body>
