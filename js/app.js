@@ -543,7 +543,7 @@ function renderReviewsParts(userDoc){
 
     const card = document.createElement("button");
     card.type = "button";
-    card.className = "partCard";
+    card.className = "partBtn";
     card.dataset.part = String(p);
 
     const pr = partRanges(p);
@@ -551,11 +551,9 @@ function renderReviewsParts(userDoc){
     const label = (maxDays === 9999) ? "يوجد صفحات لم تُراجع بعد" : `أقدم مراجعة: ${__formatAgo(maxDays)}`;
 
     card.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <div style="font-weight:900">الجزء ${p}</div>
-        <div class="mini muted">ص ${pr.start}–${pr.end}</div>
-      </div>
-      <div class="mini muted" style="margin-top:8px">${label}</div>
+      <div class="partNum">الجزء ${p}</div>
+      <div class="partMeta">ص ${pr.start}–${pr.end}</div>
+      <div class="tag">${label}</div>
     `;
 
     __applyReviewsPartCardEl(card, p, userDoc);
@@ -612,7 +610,7 @@ async function markPageReviewed(pageNum){
 }
 
 function renderReviewsPages(partNum, userDoc){
-  if(!reviewsPagesListEl || !reviewsPartTitleEl || !reviewsPartHintEl) return;
+  if(!reviewsRowsEl || !reviewsPartTitleEl || !reviewsPartHintEl) return;
   const p = Number(partNum);
   if(!p){ return; }
 
@@ -624,29 +622,25 @@ function renderReviewsPages(partNum, userDoc){
   const byPage = __getReviewsByPage(userDoc);
   const now = Date.now();
 
-  reviewsPagesListEl.innerHTML = "";
+  reviewsRowsEl.innerHTML = "";
   if(reviewsEmptyEl) reviewsEmptyEl.style.display = "none";
+  if(reviewsTableWrapEl) reviewsTableWrapEl.style.display = "block";
 
   for(const pg of pages){
     const rec = byPage[String(pg)];
     const ms = __tsToMs(rec && rec.lastReviewedAt);
     const days = (ms === null) ? null : __daysBetween(now, ms);
 
-    const row = document.createElement("div");
-    row.className = "reviewRow";
-
-    row.innerHTML = `
-      <div class="left">
-        <div class="title">صفحة ${pg}</div>
-        <div class="meta">آخر مراجعة: ${__formatAgo(days)}</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn btnSmall btnPrimary" type="button" data-act="review">راجعت ✅</button>
-      </div>
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="text-align:center;font-weight:900">${pg}</td>
+      <td style="text-align:center;color:var(--muted)">${__formatAgo(days)}</td>
+      <td style="text-align:center">
+        <button class="btn btnSmall btnPrimary" type="button" data-act="review" style="width:auto">راجعت ✅</button>
+      </td>
     `;
-
-    row.querySelector('[data-act="review"]')?.addEventListener("click", ()=>markPageReviewed(pg));
-    reviewsPagesListEl.appendChild(row);
+    tr.querySelector('[data-act="review"]')?.addEventListener("click", ()=>markPageReviewed(pg));
+    reviewsRowsEl.appendChild(tr);
   }
 
   // Update part card coloring if the pages changed
@@ -717,7 +711,8 @@ const groupMembersEmptyEl = el("groupMembersEmpty");
 
 // Reviews view
 const reviewsPartsGridEl = el("reviewsPartsGrid");
-const reviewsPagesListEl = el("reviewsPagesList");
+const reviewsRowsEl = el("reviewsRows");
+const reviewsTableWrapEl = el("reviewsTableWrap");
 const reviewsEmptyEl = el("reviewsEmpty");
 const reviewsPartTitleEl = el("reviewsPartTitle");
 const reviewsPartHintEl = el("reviewsPartHint");
@@ -2090,7 +2085,8 @@ try{
     activeReviewsPart = null;
     if(reviewsPartTitleEl) reviewsPartTitleEl.textContent = "اختاري جزء لعرض صفحاته";
     if(reviewsPartHintEl) reviewsPartHintEl.textContent = "";
-    if(reviewsPagesListEl) reviewsPagesListEl.innerHTML = "";
+    if(reviewsRowsEl) reviewsRowsEl.innerHTML = "";
+    if(reviewsTableWrapEl) reviewsTableWrapEl.style.display = "none";
     if(reviewsEmptyEl) reviewsEmptyEl.style.display = "block";
     if(reviewsClosePartBtn) reviewsClosePartBtn.style.display = "none";
   });

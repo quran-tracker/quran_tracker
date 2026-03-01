@@ -343,6 +343,8 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
 /* Reviews coloring */
 .partCard.staleWarn{ border:1px solid rgba(255, 193, 7, .45); background: rgba(255, 193, 7, .10); }
 .partCard.staleHot{ border:1px solid rgba(220, 53, 69, .45); background: rgba(220, 53, 69, .10); }
+.partBtn.staleWarn{ border:1px solid rgba(255, 193, 7, .45); background: rgba(255, 193, 7, .10); }
+.partBtn.staleHot{ border:1px solid rgba(220, 53, 69, .45); background: rgba(220, 53, 69, .10); }
 .reviewRow{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:14px; margin-bottom:10px; }
 .reviewRow .left{ display:flex; flex-direction:column; gap:2px; }
 .reviewRow .title{ font-weight:900; }
@@ -586,7 +588,19 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
         </div>
         <div class="cardBd" id="reviewsPagesBox">
           <div class="muted" id="reviewsEmpty">لا يوجد عرض حالياً.</div>
-          <div id="reviewsPagesList" class="list"></div>
+
+          <div class="tableWrap" id="reviewsTableWrap" style="display:none">
+            <table>
+              <thead>
+                <tr>
+                  <th style="min-width:110px">رقم الصفحة</th>
+                  <th style="min-width:220px">آخر مراجعة</th>
+                  <th style="min-width:140px">تسجيل</th>
+                </tr>
+              </thead>
+              <tbody id="reviewsRows"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
