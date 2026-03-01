@@ -558,10 +558,18 @@ function renderReviewsParts(userDoc){
 
     __applyReviewsPartCardEl(card, p, userDoc);
 
-    card.addEventListener("click", ()=>{
-      activeReviewsPart = p;
-      renderReviewsPages(p, userDoc);
-      window.__setActiveView?.("reviewsPart");
+    card.addEventListener("click", (ev)=>{
+      try{
+        activeReviewsPart = p;
+        // Navigate first, then render (prevents render errors from blocking navigation)
+        window.__setActiveView?.("reviewsPart");
+        renderReviewsPages(p, userDoc);
+      }catch(err){
+        console.error("reviews part open error", err);
+        // Still try to navigate even if rendering fails
+        try{ window.__setActiveView?.("reviewsPart"); }catch(e){}
+        toast("خطأ", "صار خطأ بفتح صفحات الجزء. افتحي Console وابعتيلي الخطأ.");
+      }
     });
 
     reviewsPartsGridEl.appendChild(card);
@@ -717,6 +725,26 @@ const reviewsPartTitleEl = el("reviewsPartTitle");
 const reviewsPartHintEl = el("reviewsPartHint");
 const reviewsOnlyFixedChk = el("reviewsOnlyFixed");
 const backToReviewsBtn = el("backToReviews");
+let __reviewsGridBound = false;
+if(reviewsPartsGridEl && !__reviewsGridBound){
+  __reviewsGridBound = true;
+  // Event delegation fallback (in case individual listeners are lost due to re-rendering quirks)
+  reviewsPartsGridEl.addEventListener("click", (ev)=>{
+    const btn = ev.target && ev.target.closest ? ev.target.closest(".partBtn") : null;
+    if(!btn) return;
+    const p = Number(btn.dataset.part);
+    if(!p) return;
+    try{
+      activeReviewsPart = p;
+      window.__setActiveView?.("reviewsPart");
+      const userDoc = cachedDoc || {};
+      renderReviewsPages(p, userDoc);
+    }catch(err){
+      console.error("reviews part delegation error", err);
+    }
+  });
+}
+
 let activeReviewsPart = null;
 
 let activeGroupId = null;
