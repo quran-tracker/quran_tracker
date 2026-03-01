@@ -1851,6 +1851,15 @@ function wireDashNav(){
 
 wireDashNav();
 
+// --- Reviews nav fallback (in case nav.js handlers are blocked by legacy handlers / overlays) ---
+try{
+  el("navReviews")?.addEventListener("click", (e)=>{ e.preventDefault(); window.__setActiveView?.("reviews"); });
+}catch(e){ console.error(e); }
+try{
+  el("mNavReviews")?.addEventListener("click", (e)=>{ e.preventDefault(); window.__setActiveView?.("reviews"); });
+}catch(e){ console.error(e); }
+
+
 async function openDash(){
     cachedDoc = await loadUserDoc();
     setGreeting(cachedDoc);
