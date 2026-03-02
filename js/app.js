@@ -654,12 +654,16 @@ async function markPageReviewed(pageNum){
   if(!Number.isFinite(pg) || pg <= 0) return;
 
   const ref = doc(db, "quranTrackers", currentUser.uid);
-  const field = `reviews.byPage.${pg}.lastReviewedAt`;
   try{
-    // Use setDoc(merge) so it works even if the user doc doesn't exist yet
+    // IMPORTANT: setDoc does NOT treat dotted keys as field paths.
+    // So we write the nested structure explicitly and merge it.
     await setDoc(ref, {
-      [field]: serverTimestamp(),
-      reviews: { updatedAt: serverTimestamp() },
+      reviews: {
+        byPage: {
+          [String(pg)]: { lastReviewedAt: serverTimestamp() },
+        },
+        updatedAt: serverTimestamp(),
+      },
     }, { merge: true });
 
     // Update cache immediately for UI responsiveness
