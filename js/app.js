@@ -713,9 +713,7 @@ function renderReviewsPages(partNum, userDoc){
     tr.innerHTML = `
       <td style="text-align:center;font-weight:900">${pg}</td>
       <td style="text-align:center;color:var(--muted)">${__formatAgo(days)}</td>
-      <td style="text-align:center">
-        <button class="btn btnSmall btnPrimary" type="button" data-act="review" style="width:auto">راجعت ✅</button>
-      </td>
+      <td class="actionCell"><button class="btn btnSmall btnPrimary reviewBtn" type="button" data-act="review">راجعت ✅</button></td>
     `;
     const btn = tr.querySelector('[data-act="review"]');
     if(!isPageComplete){
@@ -805,6 +803,14 @@ const reviewsRowsEl = el("reviewsRows");
 const reviewsPartTitleEl = el("reviewsPartTitle");
 const reviewsPartHintEl = el("reviewsPartHint");
 const reviewsOnlyFixedChk = el("reviewsOnlyFixed");
+// Persist "show only completed parts" filter across refreshes (default: show all)
+try{
+  if(reviewsOnlyFixedChk){
+    const saved = localStorage.getItem("reviewsOnlyFixed");
+    if(saved !== null) reviewsOnlyFixedChk.checked = (saved === "true");
+    else reviewsOnlyFixedChk.checked = false;
+  }
+}catch(e){}
 const backToReviewsBtn = el("backToReviews");
 let __reviewsGridBound = false;
 if(reviewsPartsGridEl && !__reviewsGridBound){
@@ -2189,7 +2195,7 @@ bindDashNav();
 
 // Reviews UI bindings
 try{
-  reviewsOnlyFixedChk?.addEventListener("change", async ()=>{ if(!currentUser) return; const d=(cachedDoc ?? await loadUserDoc()); renderReviewsParts(d); });
+  reviewsOnlyFixedChk?.addEventListener("change", async ()=>{ try{ localStorage.setItem("reviewsOnlyFixed", String(!!reviewsOnlyFixedChk.checked)); }catch(e){} if(!currentUser) return; const d=(cachedDoc ?? await loadUserDoc()); renderReviewsParts(d); });
   backToReviewsBtn?.addEventListener("click", ()=>{
     window.__setActiveView?.("reviews");
     try{ window.scrollTo({ top: 0, behavior: "smooth" }); }catch(e){ window.scrollTo(0,0); }
@@ -2251,4 +2257,3 @@ window.__viewLifecycle = {
     }catch(e){ console.error('leave view error', which, e); }
   }
 };
-

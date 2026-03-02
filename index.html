@@ -355,6 +355,11 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
 .reviewRow.staleHot td{ background: rgba(220, 53, 69, .08); }
 .reviewRow.rowLocked td{ background: rgba(0,0,0,.02); }
 
+/* Center the action button under the "تسجيل" column */
+.actionCell{ text-align:center; vertical-align:middle; }
+.actionCell .reviewBtn{ display:block; margin:0 auto; }
+
+
 
 /* Reviews locking */
 .partLocked{opacity:.55; filter:grayscale(1); cursor:not-allowed;}
@@ -575,7 +580,7 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
         <h2 style="margin:0">📖 المراجعات</h2>
         <label class="mini" style="display:flex;gap:8px;align-items:center;user-select:none">
-          <input type="checkbox" id="reviewsOnlyFixed" checked />
+          <input type="checkbox" id="reviewsOnlyFixed" />
           عرض فقط الأجزاء المثبّتة 100%
         </label>
       </div>
