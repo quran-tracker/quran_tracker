@@ -641,10 +641,11 @@ async function markPageReviewed(pageNum){
   const ref = doc(db, "quranTrackers", currentUser.uid);
   const field = `reviews.byPage.${pg}.lastReviewedAt`;
   try{
-    await updateDoc(ref, {
+    // Use setDoc(merge) so it works even if the user doc doesn't exist yet
+    await setDoc(ref, {
       [field]: serverTimestamp(),
-      "reviews.updatedAt": serverTimestamp(),
-    });
+      reviews: { updatedAt: serverTimestamp() },
+    }, { merge: true });
 
     // Update cache immediately for UI responsiveness
     const now = Date.now();
