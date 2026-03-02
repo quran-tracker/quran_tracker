@@ -1921,6 +1921,10 @@ async function sendInvite(){
 // --- Dash view switcher (My / Groups) ---
 function setDashView(which){
   localStorage.setItem("dashView", which);
+  // If the global view router exists, prefer it to avoid nav/view mismatch
+  if(window.__setActiveView && (which==="my" || which==="groups")){
+    try{ window.__setActiveView(which); return; }catch(e){ /* fallback below */ }
+  }
 
   const viewMyEl = el("viewMy");
   const viewGroupsEl = el("viewGroups");
@@ -1975,7 +1979,15 @@ async function openDash(){
     setGreeting(cachedDoc);
     buildPartsGrid(cachedDoc);
     showOnly("dash");
-    setDashView(localStorage.getItem("dashView") || "my");
+      // Restore last opened view (my / groups / reviews / group / reviewsPart)
+  const savedView = localStorage.getItem("activeView") || localStorage.getItem("dashView") || "my";
+  try{
+    if(window.__setActiveView){ window.__setActiveView(savedView); }
+    else { setDashView(savedView === "groups" ? "groups" : "my"); }
+  }catch(e){
+    console.error("restore view failed", e);
+    try{ setDashView("my"); }catch(_){}
+  }
 
     maybeHelloToast(cachedDoc);
 
