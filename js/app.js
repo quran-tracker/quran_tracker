@@ -122,18 +122,32 @@ function __partHasAnyCompletedPage(partRaw, partNum){
 }
 
 function __partReviewMaxAgeDays(partNum, userDoc){
+  // IMPORTANT: Reviews status should reflect ONLY *reviewable* pages
+  // (fully completed: tasmee3 + all circles). Incomplete/locked pages are ignored.
   const pages = pagesForPart(partNum);
   const byPage = __getReviewsByPage(userDoc);
   const now = Date.now();
   let maxDays = 0;
   let hasMissing = false;
+  let hasAnyComplete = false;
+
+  const partObj = (userDoc && userDoc.parts && userDoc.parts[String(partNum)]) ? userDoc.parts[String(partNum)] : null;
+  const pagesObj = (partObj && (partObj.pages ?? partObj.pageData)) ? (partObj.pages ?? partObj.pageData) : {};
+
   for(const pg of pages){
+    const raw = pagesObj[String(pg)] || {};
+    const norm = normalizePage(raw);
+    if(!__isPageFullyCompleted(norm)) continue; // ignore non-reviewable pages
+
+    hasAnyComplete = true;
     const rec = byPage[String(pg)];
     const ms = __tsToMs(rec && rec.lastReviewedAt);
     if(ms === null){ hasMissing = true; continue; }
     const d = __daysBetween(now, ms);
     if(d > maxDays) maxDays = d;
   }
+
+  if(!hasAnyComplete) return 0; // part should be locked anyway
   if(hasMissing) return 9999;
   return maxDays;
 }
@@ -691,6 +705,7 @@ function renderReviewsPages(partNum, userDoc){
     const days = (ms === null) ? null : __daysBetween(now, ms);
 
     const tr = document.createElement("tr");
+    tr.classList.add("reviewRow");
     tr.innerHTML = `
       <td style="text-align:center;font-weight:900">${pg}</td>
       <td style="text-align:center;color:var(--muted)">${__formatAgo(days)}</td>
@@ -703,6 +718,12 @@ function renderReviewsPages(partNum, userDoc){
       tr.classList.add("rowLocked");
       if(btn){ btn.disabled = true; btn.classList.add("btnDisabled"); btn.textContent = "غير مكتملة"; }
     }else{
+      // Highlight pages that require review:
+      // - Never reviewed => red
+      // - >14 days => red
+      // - >7 days => yellow/orange
+      if(days === null || days > 14) tr.classList.add("staleHot");
+      else if(days > 7) tr.classList.add("staleWarn");
       btn?.addEventListener("click", ()=>markPageReviewed(pg));
     }
     reviewsRowsEl.appendChild(tr);
