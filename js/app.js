@@ -635,8 +635,9 @@ function renderReviewsParts(userDoc){
 
 async function markPageReviewed(pageNum){
   if(!currentUser) return;
-  const pg = normalizePage(pageNum);
-  if(!pg) return;
+  // pageNum here is the page index (number). Do NOT call normalizePage (it normalizes page *objects*).
+  const pg = Number(pageNum);
+  if(!Number.isFinite(pg) || pg <= 0) return;
 
   const ref = doc(db, "quranTrackers", currentUser.uid);
   const field = `reviews.byPage.${pg}.lastReviewedAt`;
