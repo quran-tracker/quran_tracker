@@ -218,7 +218,10 @@ function __partReviewClass(maxDays){
   el("closeIntroBtn").addEventListener("click", async ()=>{ closeIntro(); await markIntroSeen(); });
 
   // email panel toggle
-  el("showEmailBtn").addEventListener("click", ()=>{ el("emailPanel").style.display="block"; });
+  el("showEmailBtn").addEventListener("click", ()=>{ 
+    el("emailPanel").style.display="block"; 
+    setTimeout(()=> el("email")?.focus(), 30);
+  });
   el("hideEmailBtn").addEventListener("click", ()=>{ el("emailPanel").style.display="none"; });
 
   // circles builders
@@ -511,6 +514,8 @@ const r = PART_RANGES[String(p)];
       "auth/invalid-email":"الإيميل غير صحيح.",
       "auth/user-not-found":"ما في حساب بهذا الإيميل. جرّبي إنشاء حساب.",
       "auth/wrong-password":"كلمة المرور غير صحيحة.",
+      "auth/invalid-credential":"الإيميل أو كلمة المرور غير صحيحين.",
+      "auth/too-many-requests":"محاولات كثيرة. انتظري قليلًا ثم جرّبي مرة ثانية.",
       "auth/email-already-in-use":"الإيميل مستخدم مسبقًا. جرّبي دخول.",
       "auth/weak-password":"كلمة المرور ضعيفة (6 أحرف على الأقل).",
       "auth/popup-closed-by-user":"تم إغلاق نافذة Google قبل إتمام الدخول.",
@@ -2008,6 +2013,14 @@ async function openDash(){
     maybeHelloToast(cachedDoc);
   }
 
+
+  el("email")?.addEventListener("keydown", (e)=>{
+    if(e.key === "Enter"){ e.preventDefault(); el("password")?.focus(); }
+  });
+  el("password")?.addEventListener("keydown", async (e)=>{
+    if(e.key === "Enter"){ e.preventDefault(); el("signInBtn")?.click(); }
+  });
+
   // Help button shows wizard anytime
   el("helpBtn").addEventListener("click", openIntro);
 
@@ -2027,7 +2040,10 @@ async function openDash(){
   el("signInBtn").addEventListener("click", async ()=>{
     try{
       setAuthStatus("جاري تسجيل الدخول...", "");
-      await signInWithEmailAndPassword(auth, el("email").value.trim(), el("password").value);
+      const email = el("email").value.trim().toLowerCase();
+      const password = el("password").value;
+      if(!email || !password){ setAuthStatus("اكتبي الإيميل وكلمة المرور أولاً.", "warn"); return; }
+      await signInWithEmailAndPassword(auth, email, password);
       setAuthStatus("تم ✅", "ok");
     }catch(e){
       console.error(e);
@@ -2038,7 +2054,10 @@ async function openDash(){
   el("signUpBtn").addEventListener("click", async ()=>{
     try{
       setAuthStatus("جاري إنشاء الحساب...", "");
-      await createUserWithEmailAndPassword(auth, el("email").value.trim(), el("password").value);
+      const email = el("email").value.trim().toLowerCase();
+      const password = el("password").value;
+      if(!email || !password){ setAuthStatus("اكتبي الإيميل وكلمة المرور أولاً.", "warn"); return; }
+      await createUserWithEmailAndPassword(auth, email, password);
       setAuthStatus("تم إنشاء الحساب ✅", "ok");
     }catch(e){
       console.error(e);
@@ -2047,7 +2066,7 @@ async function openDash(){
   });
 
   el("resetPwBtn").addEventListener("click", async ()=>{
-    const email = el("email").value.trim();
+    const email = el("email").value.trim().toLowerCase();
     if(!email){ setAuthStatus("اكتبي الإيميل أولاً.", "warn"); return; }
     try{
       await sendPasswordResetEmail(auth, email);
