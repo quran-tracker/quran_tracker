@@ -132,3 +132,5 @@ window.addEventListener('DOMContentLoaded', ()=>{
 
     window.__setActiveView = setActive;
     });
+
+.part-complete { color: white !important; }

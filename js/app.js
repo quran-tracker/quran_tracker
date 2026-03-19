@@ -2288,3 +2288,4 @@ window.__viewLifecycle = {
     }catch(e){ console.error('leave view error', which, e); }
   }
 };
+.part-complete { color: white !important; }
