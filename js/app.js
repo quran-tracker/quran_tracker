@@ -178,7 +178,7 @@ function __partReviewClass(maxDays){
       body:"• نقرأها <b>10 مرات غيبًا</b> بدون أخطاء.<br>• كل مرة صحيحة نلوّن دائرة من <b>تلاوة غيبًا</b>.<br><br><span class='mini'>إذا صار خطأ كبير: نثبّت ونكمل لحد ما تصير التلاوة سليمة.</span>" },
     { title:"المرحلة الثانية — المراجعة القريبة (الأسبوع الأول)", sub:"خلال الأسبوع الأول بعد حفظ الصفحة:",
       body:"• نراجع الصفحة عدة مرات (حسب طاقتنا).<br>• لكل مراجعة نلوّن دائرة من <b>مراجعة قريبة</b>." },
-    { title:"المرحلة الثالثة — المراجعة البعيدة (
+    { title:"المرحلة الثالثة — المراجعة البعيدة (خلال الشهر)", sub:" ",
       body:"• نراجع الصفحة عدة مرات متفرّقة.<br>• لكل مراجعة نلوّن دائرة من <b>مراجعة بعيدة</b>." },
     { title:"التسميع — مرة واحدة", sub:"التسميع ممكن قبل أو بعد (ما في مشكلة).",
       body:"بعد ما الصفحة تكون جاهزة: نسمّعها غيبًا (على صاحبة/مُسَمِّعة).<br>لما يتم التسميع بنجاح نعلّم مربع <b>تسميع</b>.<br><br><b>التسميع للصفحة يكون مرة واحدة فقط.</b>" },
@@ -201,7 +201,7 @@ function __partReviewClass(maxDays){
     });
 
     prevIntroBtn.style.visibility = introIdx===0 ? "hidden" : "visible";
-    nextIntroBtn.textContent = introIdx===INTRO_STEPS.length-1 ? "ابدأ / ابدأ / ابدأ / ابدئي الآن" : "التالي";
+    nextIntroBtn.textContent = introIdx===INTRO_STEPS.length-1 ? "ابدأ / ابدأ / ابدئي الآن" : "التالي";
   }
 
   function openIntro(){ introIdx=0; renderIntro(); introOverlay.classList.remove("hide"); }
@@ -993,7 +993,7 @@ function renderPartsPickerInto(gridEl, countEl){
         pickedParts = pickedParts.filter(x=>x!==p);
       }else{
         if(activeGroupGoalN && pickedParts.length >= activeGroupGoalN){
-          toast("تنبيه", `اختر بالضبط ${activeGroupGoalN} أجزاء فقط.`);
+          toast("تنبيه", `اختاري بالضبط ${activeGroupGoalN} أجزاء فقط.`);
           return;
         }
         pickedParts = [...pickedParts, p].sort((a,b)=>a-b);
@@ -1074,7 +1074,7 @@ async function loadGroupInvites(){
 async function sendGroupInvite(){
   const emailRaw = (groupInviteEmailEl.value || "").trim();
   const emailLower = normEmail(emailRaw);
-  if(!emailLower || !emailLower.includes("@")){ toast("تنبيه","اكتب إيميل صحيح."); return; }
+  if(!emailLower || !emailLower.includes("@")){ toast("تنبيه","اكتبي إيميل صحيح."); return; }
   if(!activeGroupId){ toast("تنبيه","لا يوجد GroupId."); return; }
 
   groupSendInviteBtn.disabled = true;
@@ -1144,7 +1144,7 @@ const members=[];
 
       members.push({
         uid:d.id,
-        name:(m.displayName||"").trim() || (m.email? m.email.split("@")[0] : "مستخدم"),
+        name:(m.displayName||"").trim() || (m.email? m.email.split("@")[0] : "عضوة"),
         parts: Array.isArray(m.selectedParts)? m.selectedParts : [],
         memPct: (Number.isFinite(memPct) ? memPct : null)
       });
@@ -1203,7 +1203,7 @@ async function loadGroupPage(){
   const myMemSnap = await getDoc(doc(db,"groups",activeGroupId,"members",currentUser.uid));
   const myMem = myMemSnap.exists() ? myMemSnap.data() : {};
   pickedParts = Array.isArray(myMem.selectedParts) ? myMem.selectedParts.slice().sort((a,b)=>a-b) : [];
-  pickPartsHintEl.textContent = `اختر بالضبط ${activeGroupGoalN} أجزاء لهدفك في هذه المجموعة.`;
+  pickPartsHintEl.textContent = `اختاري بالضبط ${activeGroupGoalN} أجزاء لهدفك في هذه المجموعة.`;
   updateMyPartsSummary();
   // (legacy hidden panel)
   renderPartsPicker();
@@ -1244,7 +1244,7 @@ async function savePickedParts(btnEl){
 
 function openPartsModal(){
   if(!activeGroupId || !currentUser) return;
-  partsModalHintEl.textContent = `اختر بالضبط ${activeGroupGoalN} أجزاء.`;
+  partsModalHintEl.textContent = `اختاري بالضبط ${activeGroupGoalN} أجزاء.`;
   updatePartsPickerCountInto(partsPickerCountModalEl);
   renderPartsPickerInto(partsPickerGridModalEl, partsPickerCountModalEl);
   partsOverlayEl.classList.remove("hide");
@@ -1399,7 +1399,7 @@ if(!sum || !per){
   memberPartsBodyEl.innerHTML = "";
   memberPartsBodyEl.appendChild(header);
   memberPartsBodyEl.insertAdjacentHTML("beforeend",
-    `<div class='muted' style='margin-top:10px;line-height:1.8'>ملاحظة: لم يتم نشر ملخّص التقدّم لهذه المستخدم بعد. يظهر تلقائيًا بعد قبولها الدعوة للمجموعة أو بعد حفظ اختيار الأجزاء.</div>`
+    `<div class='muted' style='margin-top:10px;line-height:1.8'>ملاحظة: لم يتم نشر ملخّص التقدّم لهذه العضوة بعد. يظهر تلقائيًا بعد قبولها الدعوة للمجموعة أو بعد حفظ اختيار الأجزاء.</div>`
   );
   return;
 }
@@ -1628,9 +1628,9 @@ async function createGroup(){
   const name = (groupNameEl.value || "").trim();
   const n = Number(groupNEl.value || 0);
 
-  if(!currentUser){ toast("تنبيه", "سجّل دخول أولاً."); return; }
-  if(!name){ toast("تنبيه", "اكتب اسم المجموعة."); return; }
-  if(!n || n<1 || n>30){ toast("تنبيه", "اختر عدد أجزاء صحيح (1–30)."); return; }
+  if(!currentUser){ toast("تنبيه", "سجّلي دخول أولاً."); return; }
+  if(!name){ toast("تنبيه", "اكتبي اسم المجموعة."); return; }
+  if(!n || n<1 || n>30){ toast("تنبيه", "اختاري عدد أجزاء صحيح (1–30)."); return; }
 
   try{
     // Create id first so we can write multiple docs atomically
@@ -1741,8 +1741,8 @@ async function sendInvite(){
   if(!createdGroupId){ toast("تنبيه", "أنشئي مجموعة أولاً."); return; }
   const emailRaw = (inviteEmailEl.value || "").trim();
   const emailLower = normEmail(emailRaw);
-  if(!emailLower || !emailLower.includes("@")){ toast("تنبيه", "اكتب إيميل صحيح."); return; }
-  if(!currentUser){ toast("تنبيه", "سجّل دخول أولاً."); return; }
+  if(!emailLower || !emailLower.includes("@")){ toast("تنبيه", "اكتبي إيميل صحيح."); return; }
+  if(!currentUser){ toast("تنبيه", "سجّلي دخول أولاً."); return; }
 
   sendInviteBtn.disabled = true;
   try{
@@ -1817,12 +1817,12 @@ async function sendInvite(){
   function showNameModal(show){
     el("nameOverlay").classList.toggle("hide", !show);
     el("displayName").value = "";
-    el("nameStatus").textContent = show ? "اكتب اسمك للترحيب 🌸" : "✨";
+    el("nameStatus").textContent = show ? "اكتبي اسمك للترحيب 🌸" : "✨";
   }
 
   el("saveNameBtn").addEventListener("click", async ()=>{
     const nm = el("displayName").value.trim();
-    if(!nm){ el("nameStatus").textContent = "اكتب اسمًا أولاً."; return; }
+    if(!nm){ el("nameStatus").textContent = "اكتبي اسمًا أولاً."; return; }
     try{
       const userDoc = (cachedDoc ?? await loadUserDoc());
       userDoc.profile = userDoc.profile || {};
@@ -2017,7 +2017,7 @@ async function openDash(){
       setAuthStatus("جاري تسجيل الدخول...", "");
       const email = el("email").value.trim().toLowerCase();
       const password = el("password").value;
-      if(!email || !password){ setAuthStatus("اكتب الإيميل وكلمة المرور أولاً.", "warn"); return; }
+      if(!email || !password){ setAuthStatus("اكتبي الإيميل وكلمة المرور أولاً.", "warn"); return; }
       await signInWithEmailAndPassword(auth, email, password);
       setAuthStatus("تم ✅", "ok");
     }catch(e){
@@ -2031,7 +2031,7 @@ async function openDash(){
       setAuthStatus("جاري إنشاء الحساب...", "");
       const email = el("email").value.trim().toLowerCase();
       const password = el("password").value;
-      if(!email || !password){ setAuthStatus("اكتب الإيميل وكلمة المرور أولاً.", "warn"); return; }
+      if(!email || !password){ setAuthStatus("اكتبي الإيميل وكلمة المرور أولاً.", "warn"); return; }
       await createUserWithEmailAndPassword(auth, email, password);
       setAuthStatus("تم إنشاء الحساب ✅", "ok");
     }catch(e){
@@ -2042,7 +2042,7 @@ async function openDash(){
 
   el("resetPwBtn").addEventListener("click", async ()=>{
     const email = el("email").value.trim().toLowerCase();
-    if(!email){ setAuthStatus("اكتب الإيميل أولاً.", "warn"); return; }
+    if(!email){ setAuthStatus("اكتبي الإيميل أولاً.", "warn"); return; }
     try{
       await sendPasswordResetEmail(auth, email);
       setAuthStatus("تم إرسال رابط إعادة التعيين ✅", "ok");
@@ -2090,7 +2090,7 @@ async function openDash(){
       greetEl.textContent = "";
       globalLastEl.textContent = "";
       showOnly("auth");
-      setAuthStatus("سجّل دخولك للمتابعة.", "");
+      setAuthStatus("سجّلي دخولك للمتابعة.", "");
       sessionStorage.removeItem("helloShown");
     }
   });
