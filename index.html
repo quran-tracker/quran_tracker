@@ -284,15 +284,8 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
   background:#FEF3C7 !important;
   border-color:#FEF3C7 !important;
 }
-.partBtn.partMemDone{
-  background:#BBF7D0 !important;
-  border-color:#86EFAC !important;
-}
-.partBtn.partFixDone{
-  background:#0F766E !important;
-  border-color:#0F766E !important;
-  color:white !important;
-}
+
+
 
 
 
@@ -857,14 +850,23 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
 </html>
 <style>
 
-.partBtn.partFixDone {
-  color: #FFFFFF !important;
-  font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.15);
-}
+
 
 .partBtn.partFixDone:hover {
   opacity: 0.9;
 }
 
+</style>
+
+<style>
+/* dark green (completed) */
+.partBtn.partFixDone {
+  color: #FFFFFF !important;
+  font-weight: 600;
+}
+
+/* light green (mem done) */
+.partBtn.partMemDone {
+  color: #134E4A !important;
+}
 </style>
