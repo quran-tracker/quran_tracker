@@ -131,7 +131,6 @@
     .dot{width:8px;height:8px;border-radius:999px;border:1px solid var(--line);background:#fff}
     .dot.on{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent}
     .mini{font-size:12px;color:var(--muted)}
-  
 
 /* App shell + sidebar (fixed edge) */
 .appShell{display:flex;align-items:flex-start;gap:16px;margin-top:16px}
@@ -294,8 +293,6 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
   color:white !important;
 }
 
-
-
 /* Member progress ring (beside member name) */
 .progRing{
   --p:0;
@@ -345,7 +342,6 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
   justify-content:flex-start; /* in RTL => right */
 }
 
-
 /* Reviews coloring */
 .partCard.staleWarn{ border:1px solid rgba(255, 193, 7, .45); background: rgba(255, 193, 7, .10); }
 .partCard.staleHot{ border:1px solid rgba(220, 53, 69, .45); background: rgba(220, 53, 69, .10); }
@@ -361,8 +357,6 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
 /* Center the action button under the "تسجيل" column */
 .actionCell{ text-align:center; vertical-align:middle; }
 .actionCell .reviewBtn{ display:block; margin:0 auto; }
-
-
 
 /* Reviews locking */
 .partLocked{opacity:.55; filter:grayscale(1); cursor:not-allowed;}
@@ -410,7 +404,7 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
         <div id="greet" class="greet"></div>
         <div id="globalLast" class="metaLine"></div>
       </div>
-    
+
     </div>
 
 <div class="backdrop" id="backdrop"></div>
@@ -446,7 +440,7 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
         <div class="modalHd">
           <div>
             <div style="font-weight:900;font-size:16px">أهلًا في الحلقة 🌸</div>
-            <div class="mini" style="margin-top:6px">اكتب الاسم مرة واحدة فقط، وبعدها سيظهر في رسالة الترحيب.</div>
+            <div class="mini" style="margin-top:6px">اكتبي اسمك مرة واحدة فقط، وبعدها رح نرحّب فيك فيه.</div>
           </div>
           <button class="btn btnGhost btnSmall" id="skipNameBtn" style="width:auto">تخطي</button>
         </div>
@@ -465,7 +459,7 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
 
     <!-- LOGIN -->
     <div id="authCard" class="card">
-      <div class="cardHd"><h2>تسجيل الدخول</h2><div class="muted">اختر الطريقة الأنسب لتسجيل الدخول.</div></div>
+      <div class="cardHd"><h2>تسجيل الدخول</h2><div class="muted">اختاري الطريقة الأنسب لك.</div></div>
       <div class="body split">
         <div class="panel">
           <div class="muted" style="margin-bottom:10px">الأسرع: الدخول بحساب Google</div>
@@ -478,8 +472,8 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
             </svg>
             المتابعة باستخدام Google
           </button>
-          <div class="status" id="authStatus">سجّل الدخول للمتابعة 🌸</div>
-          <div class="row" style="margin-top:12px"><span class="muted">بدون Google؟</span><button class="btnLink" id="showEmailBtn">استخدم البريد الإلكتروني + كلمة مرور</button></div>
+          <div class="status" id="authStatus">سجّلي دخولك وابدأ / ابدئي 🌸</div>
+          <div class="row" style="margin-top:12px"><span class="muted">بدون Google؟</span><button class="btnLink" id="showEmailBtn">استخدمي الإيميل + كلمة مرور</button></div>
         </div>
 
         <div class="panel" id="emailPanel" style="display:none">
@@ -498,7 +492,7 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
     <!-- DASHBOARD -->
     <div id="dash" class="card hide">
       <div class="cardHd">
-        <div><h2>الأجزاء</h2><div class="muted">اختر جزءًا للمتابعة</div></div>
+        <div><h2>الأجزاء</h2><div class="muted">اختاري جزءًا للمتابعة</div></div>
         <div class="actions">
           <button class="btn btnGhost btnSmall" id="helpBtn" style="width:auto">شرح النظام</button>
           <button class="btn btnGhost btnSmall" id="logoutBtn2" style="width:auto">خروج</button>
@@ -568,14 +562,13 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
         <div class="field"><label>ملاحظات للجزء</label><textarea id="details" placeholder="اختياري..."></textarea></div>
         <div class="footer">
           <div class="muted">الحفظ تلقائي ✨</div>
-          
+
         </div>
 
       </div>
     </div>
   </div>
 </section>
-
 
 <section class="view" id="viewReviews">
   <div class="card">
@@ -636,7 +629,7 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
     <div class="body">
       <div class="panel" style="margin-bottom:10px">
         <div style="font-weight:900;margin-bottom:6px">دعواتي</div>
-        <div class="muted" style="margin-bottom:10px">إذا وصلك طلب انضمام إلى مجموعة، سيظهر هنا. اضغط «قبول» للدخول.</div>
+        <div class="muted" style="margin-bottom:10px">إذا في بنت دعتك لمجموعة، بتظهر هون. اضغطي قبول للدخول.</div>
         <div id="invitesList" class="list"></div>
         <div id="invitesEmpty" class="muted" style="display:none">لا توجد دعوات حالياً.</div>
       </div>
@@ -646,9 +639,9 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
           <div style="font-weight:900">مجموعاتي</div>
           <button class="btn btnGhost" id="refreshGroups" type="button">تحديث</button>
         </div>
-        <div class="muted" style="margin:8px 0 10px">اضغط على أي مجموعة لإدارة الدعوات.</div>
+        <div class="muted" style="margin:8px 0 10px">اضغطي على أي مجموعة لإدارة الدعوات (قريبًا: ترتيب البنات والتقدم).</div>
         <div id="myGroupsList" class="list"></div>
-        <div id="myGroupsEmpty" class="muted" style="display:none">لم تنضم إلى أي مجموعة بعد.</div>
+        <div id="myGroupsEmpty" class="muted" style="display:none">لسا ما انضمّيتي لأي مجموعة.</div>
       </div>
     </div>
   </div>
@@ -677,8 +670,8 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
         </div>
       </div>
       <div class="panel" id="pickPartsPanel" style="display:none"margin-bottom:12px">
-        <div style="font-weight:900;margin-bottom:6px">اختر الأجزاء الخاصة بك</div>
-        <div class="muted" id="pickPartsHint" style="margin-bottom:10px">اختر بالضبط N أجزاء لهدفك في هذه المجموعة.</div>
+        <div style="font-weight:900;margin-bottom:6px">اختاري الأجزاء الخاصة فيك</div>
+        <div class="muted" id="pickPartsHint" style="margin-bottom:10px">اختاري بالضبط N أجزاء لهدفك في هذه المجموعة.</div>
 
         <div id="partsPickerGrid" class="partsGrid"></div>
 
@@ -690,9 +683,9 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
 
       <div class="panel" style="margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-          <div style="font-weight:900">دعوة عضو</div>
+          <div style="font-weight:900">دعوة عضوة</div>
         </div>
-        <div class="muted" style="margin:6px 0 10px">اكتب البريد الإلكتروني. ستظهر الدعوة في قسم «دعواتي» ليتم قبولها أو رفضها.</div>
+        <div class="muted" style="margin:6px 0 10px">اكتبي إيميلها. ستظهر لها دعوة في “دعواتي” لتقبل أو ترفض.</div>
         <div style="display:grid;grid-template-columns:1fr 120px;gap:10px;align-items:end">
           <input id="groupInviteEmail" class="in" placeholder="name@gmail.com" />
           <button class="btn" id="groupSendInvite" type="button">إرسال</button>
@@ -707,10 +700,10 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
 
       <div class="panel">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-          <div style="font-weight:900">الأعضاء</div>
-          
+          <div style="font-weight:900">العضوات</div>
+
         </div>
-        <div class="muted" style="margin-top:6px">هنا سنعرض الترتيب والنِّسَب لاحقًا. حالياً نعرض أسماء الأعضاء فقط.</div>
+        <div class="muted" style="margin-top:6px">هنا سنعرض الترتيب والنِّسَب لاحقًا. حالياً نعرض أسماء العضوات فقط.</div>
         <div id="groupMembersList" class="list"></div>
         <div id="groupMembersEmpty" class="muted" style="display:none">لا يوجد أعضاء بعد.</div>
       </div>
@@ -723,7 +716,7 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
     <div class="cardHd">
       <div>
         <h2>إنشاء مجموعة</h2>
-        <div class="muted">هدف المجموعة الآن: عدد أجزاء (N). يختار كل عضو بالضبط N أجزاء.</div>
+        <div class="muted">هدف المجموعة الآن: عدد أجزاء (N). كل عضوة تختار بالضبط N أجزاء.</div>
       </div>
     </div>
     <div class="body">
@@ -746,12 +739,12 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
           <div style="font-weight:900;margin-bottom:6px">تم إنشاء المجموعة ✅</div>
           <div class="muted" id="createdGroupMeta"></div>
 
-          <div style="margin-top:10px;font-weight:900">دعوة أعضاء</div>
-          <div class="muted" style="margin:6px 0 10px">يمكن لأي عضو في المجموعة إرسال دعوة عبر البريد الإلكتروني. تظهر الدعوة عند تسجيل الدخول ثم الضغط على «قبول».</div>
+          <div style="margin-top:10px;font-weight:900">دعوة عضوات</div>
+          <div class="muted" style="margin:6px 0 10px">أي عضوة بالمجموعة تقدر تدعو بالإيميل. الدعوة تظهر للبنت لما تدخل وتضغط “قبول”.</div>
 
           <div style="display:grid;grid-template-columns:1fr 120px;gap:10px;align-items:end">
             <div>
-              <label class="muted" for="inviteEmail" style="display:block;margin-bottom:6px">البريد الإلكتروني</label>
+              <label class="muted" for="inviteEmail" style="display:block;margin-bottom:6px">إيميل البنت</label>
               <input id="inviteEmail" class="in" placeholder="name@gmail.com" />
             </div>
             <button class="btn" id="sendInviteBtn" type="button">إرسال</button>
@@ -766,7 +759,8 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
       </div>
 
       <div class="panel">
-        
+        <div style="font-weight:900;margin-bottom:6px">ملاحظة</div>
+        <div class="muted">النسخة القادمة: داخل كل مجموعة نضيف ترتيب البنات + صفحة تفاصيل كل بنت (نِسَب فقط) + اختيار الأجزاء بالضبط N.</div>
       </div>
     </div>
   </div>
@@ -789,7 +783,7 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
       <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M16.5 13c-2.6 0-4.8 1.3-5.5 3.2.6.7 1 1.5 1 2.3V20h9v-1.5c0-3-2.2-5.5-4.5-5.5ZM8.5 13c-3.3 0-6 2-6 4.5V20h9v-1.5c0-2.5-2.7-5.5-3-5.5Zm0-2a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm8 0a2.5 2.5 0 1 0-2.5-2.5A2.5 2.5 0 0 0 16.5 11Z"/></svg></div>
       <div>مجموعاتي</div>
     </button>
-    
+
     <button class="bottomBtn" id="mNavReviews" type="button">
       <div class="ico" aria-hidden="true" style="font-weight:900;font-size:20px;line-height:1">📖</div>
       <div>مراجعات</div>
@@ -809,14 +803,13 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
   <button class="sheetItem" id="sheetLogout" type="button">تسجيل خروج</button>
 </div>
 
-
 <!-- أجزاء: اختيار/تعديل (Popup) -->
 <div id="partsOverlay" class="overlay hide" role="dialog" aria-modal="true">
   <div class="modal" style="width:min(720px,100%)">
     <div class="modalHd">
       <div>
         <div class="modalTitle">اختيار الأجزاء</div>
-        <div class="muted" id="partsModalHint">اختر بالضبط N أجزاء.</div>
+        <div class="muted" id="partsModalHint">اختاري بالضبط N أجزاء.</div>
       </div>
       <button class="iconBtn" id="partsModalClose" type="button" aria-label="إغلاق">✕</button>
     </div>
@@ -833,12 +826,12 @@ body.sidebarCollapsed .wrap{padding-right: calc(76px + 18px);}
   </div>
 </div>
 
-<!-- عرض اختيارات الأعضاء -->
+<!-- عرض أجزاء عضوة -->
 <div id="memberPartsOverlay" class="overlay hide" role="dialog" aria-modal="true">
   <div class="modal" style="width:min(520px,100%)">
     <div class="modalHd">
       <div>
-        <div class="modalTitle" id="memberPartsTitle">اختيارات العضو</div>
+        <div class="modalTitle" id="memberPartsTitle">اختيارات العضوة</div>
         <div class="muted" id="memberPartsSubtitle"></div>
       </div>
       <button class="iconBtn" id="memberPartsClose" type="button" aria-label="إغلاق">✕</button>
