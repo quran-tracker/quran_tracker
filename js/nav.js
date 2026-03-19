@@ -132,3 +132,10 @@ window.addEventListener('DOMContentLoaded', ()=>{
 
     window.__setActiveView = setActive;
     });
+
+
+/* === FORCE CLEAN GREEN THEME === */
+.part-not-started { background:#E5E7EB !important; opacity:0.7; }
+.part-in-progress { background:#86EFAC !important; }
+.part-needs-fix { background:#FDE68A !important; border:1px solid #FACC15 !important; }
+.part-complete { background:#22C55E !important; color:white !important; }
